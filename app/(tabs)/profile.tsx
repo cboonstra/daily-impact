@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import { useFocusEffect } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const FRIENDS = [
     { id: '1', name: 'Alex Rivers', impactCount: 42, avatar: 'https://i.pravatar.cc/150?u=alex' },
@@ -16,10 +16,22 @@ const FRIENDS = [
 const PROFILE_IMAGE_KEY = 'user_profile_image';
 const DEFAULT_AVATAR = 'https://i.pravatar.cc/150?u=lotte';
 
+const LEVEL_SYSTEM = [
+    { level: 1, name: 'Newcomer', impacts: 0, icon: 'seedling-outline', color: '#81C784' },
+    { level: 2, name: 'Conscious', impacts: 5, icon: 'leaf-outline', color: '#66BB6A' },
+    { level: 3, name: 'Active', impacts: 15, icon: 'partly-sunny-outline', color: '#4CAF50' },
+    { level: 4, name: 'Impact Maker', impacts: 30, icon: 'earth-outline', color: '#43A047' },
+    { level: 5, name: 'Change Agent', impacts: 50, icon: 'flame-outline', color: '#388E3C' },
+    { level: 6, name: 'Sustainability Hero', impacts: 100, icon: 'trophy-outline', color: '#2E7D32' },
+];
+
 export default function ProfileScreen() {
     const { refreshHistory, getStats } = useImpactHistory();
     const { total, streak } = getStats();
     const [profileImage, setProfileImage] = useState(DEFAULT_AVATAR);
+    const [isLevelModalVisible, setIsLevelModalVisible] = useState(false);
+
+    const currentLevelInfo = [...LEVEL_SYSTEM].reverse().find(l => total >= l.impacts) || LEVEL_SYSTEM[0];
 
     useFocusEffect(
         useCallback(() => {
@@ -83,7 +95,7 @@ export default function ProfileScreen() {
                     <View style={styles.quickStatsRow}>
                         <View style={styles.quickStat}>
                             <Text style={styles.quickStatValue}>{total}</Text>
-                            <Text style={styles.quickStatLabel}>Impacts</Text>
+                            <Text style={styles.quickStatLabel}>{total === 1 ? 'Impact' : 'Impacts'}</Text>
                         </View>
                         <View style={styles.statsDivider} />
                         <View style={styles.quickStat}>
@@ -91,10 +103,13 @@ export default function ProfileScreen() {
                             <Text style={styles.quickStatLabel}>Days Streak</Text>
                         </View>
                         <View style={styles.statsDivider} />
-                        <View style={styles.quickStat}>
-                            <Text style={styles.quickStatValue}>Level 4</Text>
+                        <TouchableOpacity
+                            style={styles.quickStat}
+                            onPress={() => setIsLevelModalVisible(true)}
+                        >
+                            <Text style={[styles.quickStatValue, { color: currentLevelInfo.color }]}>Level {currentLevelInfo.level}</Text>
                             <Text style={styles.quickStatLabel}>Impact Level</Text>
-                        </View>
+                        </TouchableOpacity>
                     </View>
                 </View>
 
@@ -115,7 +130,7 @@ export default function ProfileScreen() {
                             <Image source={{ uri: friend.avatar }} style={styles.friendAvatar} />
                             <View style={styles.friendInfo}>
                                 <Text style={styles.friendName}>{friend.name}</Text>
-                                <Text style={styles.friendSubtext}>{friend.impactCount} impacts completed</Text>
+                                <Text style={styles.friendSubtext}>{friend.impactCount} {friend.impactCount === 1 ? 'impact' : 'impacts'} completed</Text>
                             </View>
                             <TouchableOpacity style={styles.waveButton}>
                                 <Text style={styles.waveEmoji}>👋</Text>
@@ -149,6 +164,66 @@ export default function ProfileScreen() {
                     <Text style={styles.logoutText}>Log Out</Text>
                 </TouchableOpacity>
             </ScrollView>
+
+            {/* Level Modal */}
+            <Modal
+                visible={isLevelModalVisible}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setIsLevelModalVisible(false)}
+            >
+                <TouchableOpacity
+                    style={styles.modalOverlay}
+                    activeOpacity={1}
+                    onPress={() => setIsLevelModalVisible(false)}
+                >
+                    <View
+                        style={styles.modalContent}
+                        onStartShouldSetResponder={() => true}
+                    >
+                        <View style={styles.modalHeader}>
+                            <View style={[styles.modalIconContainer, { backgroundColor: currentLevelInfo.color + '20' }]}>
+                                <Ionicons name={currentLevelInfo.icon as any} size={32} color={currentLevelInfo.color} />
+                            </View>
+                            <Text style={styles.modalTitle}>Impact Levels</Text>
+                            <Text style={styles.modalSubtitle}>Current progress: {total} {total === 1 ? 'impact' : 'impacts'}</Text>
+                        </View>
+
+                        <ScrollView style={styles.levelsList} showsVerticalScrollIndicator={false}>
+                            {LEVEL_SYSTEM.map((l) => {
+                                const isReached = total >= l.impacts;
+                                const isCurrent = currentLevelInfo.level === l.level;
+
+                                return (
+                                    <View key={l.level} style={[
+                                        styles.levelItem,
+                                        isReached && styles.levelItemReached,
+                                        isCurrent && { borderColor: l.color, borderWidth: 2 }
+                                    ]}>
+                                        <View style={[styles.levelIconBox, { backgroundColor: isReached ? l.color : '#F0F0F0' }]}>
+                                            <Ionicons name={l.icon as any} size={20} color={isReached ? '#fff' : '#8E8E93'} />
+                                        </View>
+                                        <View style={styles.levelInfo}>
+                                            <Text style={[styles.levelName, isReached && { color: '#333' }]}>{l.name}</Text>
+                                            <Text style={styles.levelRequirement}>{l.impacts} {l.impacts === 1 ? 'habit' : 'habits'} required</Text>
+                                        </View>
+                                        {isReached && (
+                                            <Ionicons name="checkmark-circle" size={24} color={l.color} />
+                                        )}
+                                    </View>
+                                );
+                            })}
+                        </ScrollView>
+
+                        <TouchableOpacity
+                            style={styles.closeModalButton}
+                            onPress={() => setIsLevelModalVisible(false)}
+                        >
+                            <Text style={styles.closeModalText}>Got it!</Text>
+                        </TouchableOpacity>
+                    </View>
+                </TouchableOpacity>
+            </Modal>
         </View>
     );
 }
@@ -362,5 +437,95 @@ const styles = StyleSheet.create({
         color: '#FF3B30',
         fontSize: 16,
         fontWeight: '600',
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    modalContent: {
+        backgroundColor: '#fff',
+        borderRadius: 32,
+        width: '100%',
+        maxHeight: Dimensions.get('window').height * 0.8,
+        padding: 24,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.1,
+        shadowRadius: 20,
+        elevation: 5,
+    },
+    modalHeader: {
+        alignItems: 'center',
+        marginBottom: 24,
+    },
+    modalIconContainer: {
+        width: 64,
+        height: 64,
+        borderRadius: 32,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 16,
+    },
+    modalTitle: {
+        fontSize: 22,
+        fontWeight: '800',
+        color: '#333',
+    },
+    modalSubtitle: {
+        fontSize: 14,
+        color: '#8E8E93',
+        marginTop: 4,
+    },
+    levelsList: {
+        marginBottom: 24,
+    },
+    levelItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 16,
+        borderRadius: 16,
+        backgroundColor: '#F8F9FA',
+        marginBottom: 12,
+        borderWidth: 2,
+        borderColor: 'transparent',
+    },
+    levelItemReached: {
+        backgroundColor: '#fff',
+        borderColor: '#f0f0f0',
+    },
+    levelIconBox: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 12,
+    },
+    levelInfo: {
+        flex: 1,
+    },
+    levelName: {
+        fontSize: 16,
+        fontWeight: '700',
+        color: '#8E8E93',
+    },
+    levelRequirement: {
+        fontSize: 12,
+        color: '#8E8E93',
+        marginTop: 2,
+    },
+    closeModalButton: {
+        backgroundColor: '#3F7E44',
+        paddingVertical: 16,
+        borderRadius: 16,
+        alignItems: 'center',
+    },
+    closeModalText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: '700',
     },
 });

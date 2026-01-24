@@ -112,7 +112,7 @@ export default function MedalsScreen() {
                             <Ionicons name="checkmark-done" size={24} color="#3F7E44" />
                         </View>
                         <Text style={styles.statValue}>{total}</Text>
-                        <Text style={styles.statLabel}>Total Habits</Text>
+                        <Text style={styles.statLabel}>{total === 1 ? 'Impact' : 'Impacts'}</Text>
                     </View>
 
                     <View style={styles.statCard}>
