@@ -1,8 +1,8 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React from 'react';
 
 import { HapticTab } from '@/components/haptic-tab';
-import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
@@ -17,31 +17,31 @@ export default function TabLayout() {
         tabBarButton: HapticTab,
       }}>
       <Tabs.Screen
-        name="index"
+        name="medals"
         options={{
-          title: 'SDGs',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="globe.europe.africa.fill" color={color} />,
+          title: 'Medals',
+          tabBarIcon: ({ color }) => <Ionicons size={24} name="trophy-outline" color={color} />,
         }}
       />
       <Tabs.Screen
         name="daily"
         options={{
-          title: 'Daily',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="checkmark.circle.fill" color={color} />,
+          title: 'Daily Habit',
+          tabBarIcon: ({ color }) => <Ionicons size={24} name="ellipse-outline" color={color} />,
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="index"
         options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          title: 'SDG\'s',
+          tabBarIcon: ({ color }) => <Ionicons size={24} name="apps" color={color} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="person.fill" color={color} />,
+          tabBarIcon: ({ color }) => <Ionicons size={24} name="person" color={color} />,
         }}
       />
     </Tabs>
