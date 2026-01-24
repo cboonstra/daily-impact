@@ -4,23 +4,23 @@ import React, { useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const SDGS = [
-  { id: 1, title: 'Geen armoede', color: '#E5243B', description: 'Beëindig armoede in al zijn vormen wereldwijd.', icon: require('@/assets/images/sdgs/sdg1.png'), targets: 7, publications: 51, actions: 1562 },
-  { id: 2, title: 'Geen honger', color: '#DDA63A', description: 'Beëindig honger, bereik voedselzekerheid en verbeterde voeding en promoot duurzame landbouw.', icon: require('@/assets/images/sdgs/sdg2.png'), targets: 8, publications: 42, actions: 1200 },
-  { id: 3, title: 'Goede gezondheid en welzijn', color: '#4C9F38', description: 'Verzeker een goede gezondheid en promoot welzijn voor alle leeftijden.', icon: require('@/assets/images/sdgs/sdg3.png'), targets: 13, publications: 89, actions: 2100 },
-  { id: 4, title: 'Kwaliteitsonderwijs', color: '#C5192D', description: 'Verzeker gelijke toegang tot kwaliteitsvol onderwijs en bevorder levenslang leren voor iedereen.', icon: require('@/assets/images/sdgs/sdg4.png'), targets: 10, publications: 65, actions: 1800 },
-  { id: 5, title: 'Gendergelijkheid', color: '#FF3A21', description: 'Bereik gendergelijkheid en empowerment voor alle vrouwen en meisjes.', icon: require('@/assets/images/sdgs/sdg5.png'), targets: 9, publications: 38, actions: 1150 },
-  { id: 6, title: 'Schoon water en sanitair', color: '#26BDE2', description: 'Verzeker toegang tot duurzaam beheer van water en sanitair voor iedereen.', icon: require('@/assets/images/sdgs/sdg6.png'), targets: 8, publications: 34, actions: 950 },
-  { id: 7, title: 'Betaalbare en duurzame energie', color: '#FCC30B', description: 'Verzeker toegang tot betaalbare, betrouwbare, duurzame en moderne energie voor iedereen.', icon: require('@/assets/images/sdgs/sdg7.png'), targets: 5, publications: 28, actions: 1100 },
-  { id: 8, title: 'Waardig werk en economische groei', color: '#A21942', description: 'Bevorder aanhoudende, inclusieve en duurzame economische groei, volledige en productieve tewerkstelling en waardig werk voor iedereen.', icon: require('@/assets/images/sdgs/sdg8.png'), targets: 12, publications: 55, actions: 1400 },
-  { id: 9, title: 'Industrie, innovatie en infrastructuur', color: '#FD6925', description: 'Bouw veerkrachtige infrastructuur, bevorder inclusieve en duurzame industrialisering en stimuleer innovatie.', icon: require('@/assets/images/sdgs/sdg9.png'), targets: 8, publications: 40, actions: 1300 },
-  { id: 10, title: 'Ongelijkheid verminderen', color: '#DD1367', description: 'Dring ongelijkheid in en tussen landen terug.', icon: require('@/assets/images/sdgs/sdg10.png'), targets: 10, publications: 45, actions: 1250 },
-  { id: 11, title: 'Duurzame steden en gemeenschappen', color: '#FD9D24', description: 'Maak steden en menselijke nederzettingen inclusief, veilig, veerkrachtig en duurzaam.', icon: require('@/assets/images/sdgs/sdg11.png'), targets: 10, publications: 52, actions: 1600 },
-  { id: 12, title: 'Verantwoorde consumptie en productie', color: '#BF8B2E', description: 'Verzeker duurzame consumptie- en productiepatronen.', icon: require('@/assets/images/sdgs/sdg12.png'), targets: 11, publications: 48, actions: 1450 },
-  { id: 13, title: 'Klimaatactie', color: '#3F7E44', description: 'Neem dringend actie om klimaatverandering en haar impact te bestrijden.', icon: require('@/assets/images/sdgs/sdg13.png'), targets: 5, publications: 95, actions: 3200 },
-  { id: 14, title: 'Leven in het water', color: '#0A97D9', description: 'Behoud en maak duurzaam gebruik van de oceanen, zeeën en maritieme hulpbronnen.', icon: require('@/assets/images/sdgs/sdg14.png'), targets: 10, publications: 42, actions: 1100 },
-  { id: 15, title: 'Leven op het land', color: '#56C02B', description: 'Bescherm, herstel en bevorder het duurzaam gebruik van ecosystemen op het vasteland.', icon: require('@/assets/images/sdgs/sdg15.png'), targets: 12, publications: 35, actions: 980 },
-  { id: 16, title: 'Vrede, justitie en sterke instellingen', color: '#00689D', description: 'Bevorder vreedzame en inclusieve samenlevingen met het oog op duurzame ontwikkeling.', icon: require('@/assets/images/sdgs/sdg16.png'), targets: 10, publications: 62, actions: 1450 },
-  { id: 17, title: 'Partnerschap om doelstellingen te bereiken', color: '#19486A', description: 'Versterk de implementatiemiddelen en revitaliseer het wereldwijd partnerschap voor duurzame ontwikkeling.', icon: require('@/assets/images/sdgs/sdg17.png'), targets: 19, publications: 120, actions: 4500 },
+  { id: 1, title: 'No Poverty', color: '#E5243B', description: 'End poverty in all its forms everywhere.', icon: require('@/assets/images/sdgs/sdg1.png'), targets: 7, publications: 51, actions: 1562 },
+  { id: 2, title: 'Zero Hunger', color: '#DDA63A', description: 'End hunger, achieve food security and improved nutrition and promote sustainable agriculture.', icon: require('@/assets/images/sdgs/sdg2.png'), targets: 8, publications: 42, actions: 1200 },
+  { id: 3, title: 'Good Health and Well-being', color: '#4C9F38', description: 'Ensure healthy lives and promote well-being for all at all ages.', icon: require('@/assets/images/sdgs/sdg3.png'), targets: 13, publications: 89, actions: 2100 },
+  { id: 4, title: 'Quality Education', color: '#C5192D', description: 'Ensure inclusive and equitable quality education and promote lifelong learning opportunities for all.', icon: require('@/assets/images/sdgs/sdg4.png'), targets: 10, publications: 65, actions: 1800 },
+  { id: 5, title: 'Gender Equality', color: '#FF3A21', description: 'Achieve gender equality and empower all women and girls.', icon: require('@/assets/images/sdgs/sdg5.png'), targets: 9, publications: 38, actions: 1150 },
+  { id: 6, title: 'Clean Water and Sanitation', color: '#26BDE2', description: 'Ensure availability and sustainable management of water and sanitation for all.', icon: require('@/assets/images/sdgs/sdg6.png'), targets: 8, publications: 34, actions: 950 },
+  { id: 7, title: 'Affordable and Clean Energy', color: '#FCC30B', description: 'Ensure access to affordable, reliable, sustainable and modern energy for all.', icon: require('@/assets/images/sdgs/sdg7.png'), targets: 5, publications: 28, actions: 1100 },
+  { id: 8, title: 'Decent Work and Economic Growth', color: '#A21942', description: 'Promote sustained, inclusive and sustainable economic growth, full and productive employment and decent work for all.', icon: require('@/assets/images/sdgs/sdg8.png'), targets: 12, publications: 55, actions: 1400 },
+  { id: 9, title: 'Industry, Innovation and Infrastructure', color: '#FD6925', description: 'Build resilient infrastructure, promote inclusive and sustainable industrialization and foster innovation.', icon: require('@/assets/images/sdgs/sdg9.png'), targets: 8, publications: 40, actions: 1300 },
+  { id: 10, title: 'Reduced Inequality', color: '#DD1367', description: 'Reduce inequality within and among countries.', icon: require('@/assets/images/sdgs/sdg10.png'), targets: 10, publications: 45, actions: 1250 },
+  { id: 11, title: 'Sustainable Cities and Communities', color: '#FD9D24', description: 'Make cities and human settlements inclusive, safe, resilient and sustainable.', icon: require('@/assets/images/sdgs/sdg11.png'), targets: 10, publications: 52, actions: 1600 },
+  { id: 12, title: 'Responsible Consumption and Production', color: '#BF8B2E', description: 'Ensure sustainable consumption and production patterns.', icon: require('@/assets/images/sdgs/sdg12.png'), targets: 11, publications: 48, actions: 1450 },
+  { id: 13, title: 'Climate Action', color: '#3F7E44', description: 'Take urgent action to combat climate change and its impacts.', icon: require('@/assets/images/sdgs/sdg13.png'), targets: 5, publications: 95, actions: 3200 },
+  { id: 14, title: 'Life Below Water', color: '#0A97D9', description: 'Conserve and sustainably use the oceans, seas and marine resources for sustainable development.', icon: require('@/assets/images/sdgs/sdg14.png'), targets: 10, publications: 42, actions: 1100 },
+  { id: 15, title: 'Life on Land', color: '#56C02B', description: 'Protect, restore and promote sustainable use of terrestrial ecosystems and halt biodiversity loss.', icon: require('@/assets/images/sdgs/sdg15.png'), targets: 12, publications: 35, actions: 980 },
+  { id: 16, title: 'Peace, Justice and Strong Institutions', color: '#00689D', description: 'Promote peaceful and inclusive societies for sustainable development.', icon: require('@/assets/images/sdgs/sdg16.png'), targets: 10, publications: 62, actions: 1450 },
+  { id: 17, title: 'Partnerships for the Goals', color: '#19486A', description: 'Strengthen the means of implementation and revitalize the Global Partnership for Sustainable Development.', icon: require('@/assets/images/sdgs/sdg17.png'), targets: 19, publications: 120, actions: 4500 },
 ];
 
 export default function HomeScreen() {
@@ -51,7 +51,7 @@ export default function HomeScreen() {
         <TouchableOpacity style={styles.backButton}>
           <Ionicons name="chevron-back" size={28} color="#333" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>SDG's</Text>
+        <Text style={styles.headerTitle}>SDGs</Text>
         <View style={{ width: 44 }} />
       </View>
 
@@ -70,58 +70,45 @@ export default function HomeScreen() {
       >
         <View style={styles.modalOverlay}>
           <Pressable style={styles.modalDismiss} onPress={() => setSelectedSdg(null)} />
-          <View style={styles.modalContent}>
+          <View style={[styles.modalContent, selectedSdg ? { backgroundColor: selectedSdg.color } : null]}>
             {selectedSdg && (
-              <>
-                <View style={[styles.detailHero, { backgroundColor: selectedSdg.color }]}>
-                  <TouchableOpacity
-                    style={styles.closeButton}
-                    onPress={() => setSelectedSdg(null)}
-                  >
-                    <Ionicons name="close-circle" size={32} color="rgba(255,255,255,0.8)" />
-                  </TouchableOpacity>
+              <View style={styles.detailHero}>
+                <TouchableOpacity
+                  style={styles.closeButton}
+                  onPress={() => setSelectedSdg(null)}
+                >
+                  <Ionicons name="close-circle" size={32} color="rgba(255,255,255,0.8)" />
+                </TouchableOpacity>
 
-                  <View style={styles.detailHeaderInfo}>
-                    <Text style={styles.detailNumber}>{selectedSdg.id}</Text>
-                    <Text style={styles.detailTitleSmall}>{selectedSdg.title}</Text>
-                  </View>
-
-                  <Text style={styles.detailTitleLarge}>{selectedSdg.title}</Text>
-                  <Text style={styles.detailDescriptionWhite}>
-                    {selectedSdg.description}
-                  </Text>
-
-                  <View style={styles.statsRow}>
-                    <View style={styles.statItem}>
-                      <Text style={styles.statValue}>{selectedSdg.targets || '-'}</Text>
-                      <Text style={styles.statLabel}>Targets</Text>
-                    </View>
-                    <View style={styles.statItem}>
-                      <Text style={styles.statValue}>{selectedSdg.publications || '-'}</Text>
-                      <Text style={styles.statLabel}>Publicaties</Text>
-                    </View>
-                    <View style={styles.statItem}>
-                      <Text style={styles.statValue}>{selectedSdg.actions || '-'}</Text>
-                      <Text style={styles.statLabel}>Acties</Text>
-                    </View>
-                  </View>
-
-                  <TouchableOpacity style={styles.moreInfoButtonOutline}>
-                    <Text style={styles.moreInfoButtonTextWhite}>Meer info</Text>
-                  </TouchableOpacity>
+                <View style={styles.detailHeaderInfo}>
+                  <Text style={styles.detailNumber}>{selectedSdg.id}</Text>
+                  <Text style={styles.detailTitleSmall}>{selectedSdg.title}</Text>
                 </View>
 
-                <View style={styles.detailBody}>
-                  <Text style={styles.detailBodyTitle}>{selectedSdg.title}</Text>
-                  <Text style={styles.detailBodyDescription}>
-                    {selectedSdg.description}
-                  </Text>
+                <Text style={styles.detailTitleLarge}>{selectedSdg.title}</Text>
+                <Text style={styles.detailDescriptionWhite}>
+                  {selectedSdg.description}
+                </Text>
 
-                  <TouchableOpacity style={styles.moreInfoButtonSolid}>
-                    <Text style={styles.moreInfoButtonTextSolid}>Meer info</Text>
-                  </TouchableOpacity>
+                <View style={styles.statsRow}>
+                  <View style={styles.statItem}>
+                    <Text style={styles.statValue}>{selectedSdg.targets || '-'}</Text>
+                    <Text style={styles.statLabel}>Targets</Text>
+                  </View>
+                  <View style={styles.statItem}>
+                    <Text style={styles.statValue}>{selectedSdg.publications || '-'}</Text>
+                    <Text style={styles.statLabel}>Publications</Text>
+                  </View>
+                  <View style={styles.statItem}>
+                    <Text style={styles.statValue}>{selectedSdg.actions || '-'}</Text>
+                    <Text style={styles.statLabel}>Actions</Text>
+                  </View>
                 </View>
-              </>
+
+                <TouchableOpacity style={styles.moreInfoButtonOutline}>
+                  <Text style={styles.moreInfoButtonTextWhite}>More info</Text>
+                </TouchableOpacity>
+              </View>
             )}
           </View>
         </View>
@@ -205,7 +192,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   modalContent: {
-    backgroundColor: '#fff',
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
     height: '85%',
@@ -214,8 +200,7 @@ const styles = StyleSheet.create({
   detailHero: {
     padding: 30,
     paddingTop: 20,
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
+    flex: 1,
   },
   closeButton: {
     alignSelf: 'flex-end',
@@ -283,31 +268,5 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     fontWeight: '600',
-  },
-  detailBody: {
-    padding: 30,
-  },
-  detailBodyTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#333',
-    marginBottom: 10,
-  },
-  detailBodyDescription: {
-    fontSize: 16,
-    color: '#666',
-    lineHeight: 24,
-    marginBottom: 30,
-  },
-  moreInfoButtonSolid: {
-    backgroundColor: '#E5243B', // Default red, can be themed
-    borderRadius: 12,
-    paddingVertical: 18,
-    alignItems: 'center',
-  },
-  moreInfoButtonTextSolid: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '700',
   },
 });
