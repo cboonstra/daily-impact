@@ -55,6 +55,14 @@ export default function HomeScreen() {
         <View style={styles.grid}>
           {SDGS.map(renderSdgTile)}
         </View>
+
+        {/* Footer Tag */}
+        <View style={styles.infoBox}>
+          <Ionicons name="sparkles-outline" size={20} color="#FFB300" />
+          <Text style={styles.infoText}>
+            Consistent actions create the biggest impact. Keep it up!
+          </Text>
+        </View>
       </ScrollView>
 
       {/* Modal Detail View */}
@@ -208,5 +216,23 @@ const styles = StyleSheet.create({
     opacity: 0.9,
     lineHeight: 24,
     marginBottom: 25,
+  },
+  infoBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 16,
+    marginTop: 32,
+    marginBottom: 10,
+    gap: 12,
+    borderWidth: 1,
+    borderColor: '#f0f0f0',
+  },
+  infoText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#8E8E93',
+    lineHeight: 20,
   },
 });

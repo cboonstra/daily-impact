@@ -26,10 +26,11 @@ const LEVEL_SYSTEM = [
 ];
 
 export default function ProfileScreen() {
-    const { refreshHistory, getStats } = useImpactHistory();
+    const { history, refreshHistory, getStats } = useImpactHistory();
     const { total, streak } = getStats();
     const [profileImage, setProfileImage] = useState(DEFAULT_AVATAR);
     const [isLevelModalVisible, setIsLevelModalVisible] = useState(false);
+    const [viewDate, setViewDate] = useState(new Date());
 
     const currentLevelInfo = [...LEVEL_SYSTEM].reverse().find(l => total >= l.impacts) || LEVEL_SYSTEM[0];
 
@@ -47,6 +48,18 @@ export default function ProfileScreen() {
         loadProfileImage();
     }, []);
 
+    const handlePrevMonth = () => {
+        const newDate = new Date(viewDate);
+        newDate.setMonth(newDate.getMonth() - 1);
+        setViewDate(newDate);
+    };
+
+    const handleNextMonth = () => {
+        const newDate = new Date(viewDate);
+        newDate.setMonth(newDate.getMonth() + 1);
+        setViewDate(newDate);
+    };
+
     const pickImage = async () => {
         const result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ['images'],
@@ -60,6 +73,76 @@ export default function ProfileScreen() {
             setProfileImage(uri);
             await AsyncStorage.setItem(PROFILE_IMAGE_KEY, uri);
         }
+    };
+
+    const renderCalendar = () => {
+        const today = new Date();
+        const viewMonth = viewDate.getMonth();
+        const viewYear = viewDate.getFullYear();
+
+        const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+        const firstDayOfMonth = new Date(viewYear, viewMonth, 1).getDay();
+
+        const monthName = viewDate.toLocaleString('default', { month: 'long' });
+
+        // Adjusted for Monday start (0=Sun, 1=Mon... -> 0=Mon, 1=Tue... 6=Sun)
+        const adjustedFirstDay = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1;
+
+        const days = [];
+        // Padding for first week
+        for (let i = 0; i < adjustedFirstDay; i++) {
+            days.push(<View key={`pad-${i}`} style={styles.calendarDayEmpty} />);
+        }
+
+        // Days of the month
+        for (let d = 1; d <= daysInMonth; d++) {
+            const dateStr = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+            const isCompleted = history[dateStr];
+            const isToday = d === today.getDate() && viewMonth === today.getMonth() && viewYear === today.getFullYear();
+
+            days.push(
+                <View key={d} style={styles.calendarDayContainer}>
+                    <View style={[
+                        styles.calendarDay,
+                        isToday && styles.dayToday
+                    ]}>
+                        <Text style={[
+                            styles.dayText,
+                            isToday && styles.dayTextToday
+                        ]}>
+                            {d}
+                        </Text>
+                        {isCompleted && <View style={styles.completionDot} />}
+                    </View>
+                </View>
+            );
+        }
+
+        return (
+            <View style={styles.calendarCard}>
+                <View style={styles.calendarHeader}>
+                    <TouchableOpacity onPress={handlePrevMonth} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                        <Ionicons name="chevron-back" size={20} color="#333" />
+                    </TouchableOpacity>
+
+                    <Text style={styles.monthTitle}>{monthName} {viewYear}</Text>
+
+                    <TouchableOpacity onPress={handleNextMonth} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                        <Ionicons name="chevron-forward" size={20} color="#333" />
+                    </TouchableOpacity>
+                </View>
+
+                <View style={styles.weekDays}>
+                    {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, index) => (
+                        <Text key={`${day}-${index}`} style={styles.weekDayText}>{day}</Text>
+                    ))}
+                </View>
+
+                <View style={styles.calendarGrid}>
+                    {days}
+                </View>
+            </View>
+        );
     };
 
     return (
@@ -113,6 +196,13 @@ export default function ProfileScreen() {
                     </View>
                 </View>
 
+                {/* Habit Calendar Section */}
+                <View style={styles.sectionHeader}>
+                    <Text style={styles.sectionTitle}>Impact Calendar</Text>
+                </View>
+                {renderCalendar()}
+                <View style={{ height: 32 }} />
+
                 {/* Friends Section */}
                 <View style={styles.sectionHeader}>
                     <Text style={styles.sectionTitle}>Friends</Text>
@@ -163,6 +253,14 @@ export default function ProfileScreen() {
                 <TouchableOpacity style={styles.logoutButton}>
                     <Text style={styles.logoutText}>Log Out</Text>
                 </TouchableOpacity>
+
+                {/* Footer Tag */}
+                <View style={styles.infoBox}>
+                    <Ionicons name="sparkles-outline" size={20} color="#FFB300" />
+                    <Text style={styles.infoText}>
+                        Consistent actions create the biggest impact. Keep it up!
+                    </Text>
+                </View>
             </ScrollView>
 
             {/* Level Modal */}
@@ -527,5 +625,100 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 16,
         fontWeight: '700',
+    },
+    calendarCard: {
+        backgroundColor: '#fff',
+        borderRadius: 24,
+        padding: 20,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.05,
+        shadowRadius: 10,
+        elevation: 2,
+    },
+    calendarHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    monthTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: '#333',
+    },
+    weekDays: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        marginBottom: 12,
+    },
+    weekDayText: {
+        fontSize: 12,
+        fontWeight: '700',
+        color: '#C7C7CC',
+        width: 40,
+        textAlign: 'center',
+    },
+    calendarGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+    },
+    calendarDayContainer: {
+        width: '14.28%',
+        aspectRatio: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 4,
+    },
+    calendarDayEmpty: {
+        width: '14.28%',
+        aspectRatio: 1,
+    },
+    calendarDay: {
+        width: '100%',
+        height: '100%',
+        borderRadius: 999,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    dayToday: {
+        borderWidth: 2,
+        borderColor: '#3F7E44',
+    },
+    dayText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#333',
+    },
+    dayTextToday: {
+        color: '#3F7E44',
+        fontWeight: '800',
+    },
+    completionDot: {
+        width: 4,
+        height: 4,
+        borderRadius: 2,
+        backgroundColor: '#3F7E44',
+        marginTop: 2,
+        position: 'absolute',
+        bottom: 6,
+    },
+    infoBox: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#fff',
+        borderRadius: 16,
+        padding: 16,
+        marginTop: 20,
+        marginBottom: 10,
+        gap: 12,
+        borderWidth: 1,
+        borderColor: '#f0f0f0',
+    },
+    infoText: {
+        flex: 1,
+        fontSize: 14,
+        color: '#8E8E93',
+        lineHeight: 20,
     },
 });

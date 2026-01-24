@@ -17,13 +17,6 @@ export default function TabLayout() {
         tabBarButton: HapticTab,
       }}>
       <Tabs.Screen
-        name="medals"
-        options={{
-          title: 'Progress',
-          tabBarIcon: ({ color }) => <Ionicons size={24} name="calendar-outline" color={color} />,
-        }}
-      />
-      <Tabs.Screen
         name="explore"
         options={{
           title: 'SDG\'s',
