@@ -1,9 +1,118 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { useImpactHistory } from '@/hooks/useImpactHistory';
+import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from 'expo-router';
+import React, { useCallback } from 'react';
+import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+
+const FRIENDS = [
+    { id: '1', name: 'Alex Rivers', impactCount: 42, avatar: 'https://i.pravatar.cc/150?u=alex' },
+    { id: '2', name: 'Sarah Chen', impactCount: 128, avatar: 'https://i.pravatar.cc/150?u=sarah' },
+    { id: '3', name: 'Marcus de Vries', impactCount: 15, avatar: 'https://i.pravatar.cc/150?u=marcus' },
+    { id: '4', name: 'Elena Petrova', impactCount: 89, avatar: 'https://i.pravatar.cc/150?u=elena' },
+];
 
 export default function ProfileScreen() {
+    const { refreshHistory, getStats } = useImpactHistory();
+    const { total, streak } = getStats();
+
+    useFocusEffect(
+        useCallback(() => {
+            refreshHistory();
+        }, [])
+    );
+
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Profile</Text>
+            <View style={styles.header}>
+                <Text style={styles.headerTitle}>Profile</Text>
+                <TouchableOpacity style={styles.settingsButton}>
+                    <Ionicons name="settings-outline" size={24} color="#333" />
+                </TouchableOpacity>
+            </View>
+
+            <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+                {/* Profile Brief */}
+                <View style={styles.profileBriefCard}>
+                    <View style={styles.avatarContainer}>
+                        <Image
+                            source={{ uri: 'https://i.pravatar.cc/150?u=lotte' }}
+                            style={styles.avatar}
+                        />
+                        <View style={styles.editAvatarBadge}>
+                            <Ionicons name="camera" size={16} color="#fff" />
+                        </View>
+                    </View>
+
+                    <Text style={styles.profileName}>Lotte Boonstra</Text>
+                    <Text style={styles.profileBio}>Making everyday impact counts. 🌍✨</Text>
+
+                    <View style={styles.quickStatsRow}>
+                        <View style={styles.quickStat}>
+                            <Text style={styles.quickStatValue}>{total}</Text>
+                            <Text style={styles.quickStatLabel}>Impacts</Text>
+                        </View>
+                        <View style={styles.statsDivider} />
+                        <View style={styles.quickStat}>
+                            <Text style={styles.quickStatValue}>{streak}</Text>
+                            <Text style={styles.quickStatLabel}>Days Streak</Text>
+                        </View>
+                        <View style={styles.statsDivider} />
+                        <View style={styles.quickStat}>
+                            <Text style={styles.quickStatValue}>Level 4</Text>
+                            <Text style={styles.quickStatLabel}>Impact Level</Text>
+                        </View>
+                    </View>
+                </View>
+
+                {/* Friends Section */}
+                <View style={styles.sectionHeader}>
+                    <Text style={styles.sectionTitle}>Friends</Text>
+                    <TouchableOpacity>
+                        <Text style={styles.seeAllText}>Add Friend</Text>
+                    </TouchableOpacity>
+                </View>
+
+                <View style={styles.friendsCard}>
+                    {FRIENDS.map((friend, index) => (
+                        <View key={friend.id} style={[
+                            styles.friendItem,
+                            index !== FRIENDS.length - 1 && styles.friendDivider
+                        ]}>
+                            <Image source={{ uri: friend.avatar }} style={styles.friendAvatar} />
+                            <View style={styles.friendInfo}>
+                                <Text style={styles.friendName}>{friend.name}</Text>
+                                <Text style={styles.friendSubtext}>{friend.impactCount} impacts completed</Text>
+                            </View>
+                            <TouchableOpacity style={styles.waveButton}>
+                                <Text style={styles.waveEmoji}>👋</Text>
+                            </TouchableOpacity>
+                        </View>
+                    ))}
+                </View>
+
+                {/* Account Details Section */}
+                <Text style={styles.sectionTitle}>Account Details</Text>
+                <View style={styles.detailsCard}>
+                    <View style={styles.detailItem}>
+                        <Ionicons name="mail-outline" size={20} color="#8E8E93" style={styles.detailIcon} />
+                        <View>
+                            <Text style={styles.detailLabel}>Email</Text>
+                            <Text style={styles.detailValue}>lotte@dailyimpact.com</Text>
+                        </View>
+                    </View>
+                    <View style={[styles.detailItem, styles.friendDivider]}>
+                        <Ionicons name="calendar-outline" size={20} color="#8E8E93" style={styles.detailIcon} />
+                        <View>
+                            <Text style={styles.detailLabel}>Joined</Text>
+                            <Text style={styles.detailValue}>January 24, 2026</Text>
+                        </View>
+                    </View>
+                </View>
+
+                <TouchableOpacity style={styles.logoutButton}>
+                    <Text style={styles.logoutText}>Log Out</Text>
+                </TouchableOpacity>
+            </ScrollView>
         </View>
     );
 }
@@ -11,12 +120,211 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        backgroundColor: '#F8F9FA',
+    },
+    header: {
+        paddingTop: 60,
+        paddingBottom: 15,
+        paddingHorizontal: 20,
+        flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: 'space-between',
+        borderBottomWidth: 1,
+        borderBottomColor: '#f0f0f0',
         backgroundColor: '#fff',
     },
-    title: {
+    headerTitle: {
+        fontSize: 22,
+        fontWeight: '700',
+        color: '#333',
+    },
+    settingsButton: {
+        padding: 4,
+    },
+    scrollContent: {
+        padding: 20,
+        paddingBottom: 40,
+    },
+    profileBriefCard: {
+        backgroundColor: '#fff',
+        borderRadius: 32,
+        padding: 24,
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.05,
+        shadowRadius: 10,
+        elevation: 2,
+        marginBottom: 32,
+    },
+    avatarContainer: {
+        position: 'relative',
+        marginBottom: 16,
+    },
+    avatar: {
+        width: 100,
+        height: 100,
+        borderRadius: 50,
+        borderWidth: 4,
+        borderColor: '#E8F5E9',
+    },
+    editAvatarBadge: {
+        position: 'absolute',
+        bottom: 0,
+        right: 0,
+        backgroundColor: '#3F7E44',
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 3,
+        borderColor: '#fff',
+    },
+    profileName: {
         fontSize: 24,
-        fontWeight: 'bold',
+        fontWeight: '800',
+        color: '#333',
+        marginBottom: 4,
+    },
+    profileBio: {
+        fontSize: 15,
+        color: '#8E8E93',
+        marginBottom: 24,
+        textAlign: 'center',
+    },
+    quickStatsRow: {
+        flexDirection: 'row',
+        width: '100%',
+        justifyContent: 'space-between',
+        paddingTop: 16,
+        borderTopWidth: 1,
+        borderTopColor: '#f5f5f5',
+    },
+    quickStat: {
+        flex: 1,
+        alignItems: 'center',
+    },
+    quickStatValue: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: '#333',
+    },
+    quickStatLabel: {
+        fontSize: 12,
+        color: '#8E8E93',
+        marginTop: 2,
+    },
+    statsDivider: {
+        width: 1,
+        height: '60%',
+        backgroundColor: '#f0f0f0',
+        alignSelf: 'center',
+    },
+    sectionHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 16,
+    },
+    sectionTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: '#333',
+    },
+    seeAllText: {
+        fontSize: 14,
+        color: '#3F7E44',
+        fontWeight: '600',
+    },
+    friendsCard: {
+        backgroundColor: '#fff',
+        borderRadius: 24,
+        padding: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.05,
+        shadowRadius: 10,
+        elevation: 2,
+        marginBottom: 32,
+    },
+    friendItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 12,
+    },
+    friendDivider: {
+        borderBottomWidth: 1,
+        borderBottomColor: '#f5f5f5',
+    },
+    friendAvatar: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        marginRight: 12,
+    },
+    friendInfo: {
+        flex: 1,
+    },
+    friendName: {
+        fontSize: 15,
+        fontWeight: '600',
+        color: '#333',
+    },
+    friendSubtext: {
+        fontSize: 13,
+        color: '#8E8E93',
+        marginTop: 2,
+    },
+    waveButton: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: '#F8F9FA',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    waveEmoji: {
+        fontSize: 16,
+    },
+    detailsCard: {
+        backgroundColor: '#fff',
+        borderRadius: 24,
+        padding: 20,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.05,
+        shadowRadius: 10,
+        elevation: 2,
+        marginBottom: 32,
+    },
+    detailItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 12,
+    },
+    detailIcon: {
+        marginRight: 16,
+    },
+    detailLabel: {
+        fontSize: 12,
+        color: '#8E8E93',
+        fontWeight: '500',
+    },
+    detailValue: {
+        fontSize: 15,
+        color: '#333',
+        fontWeight: '600',
+        marginTop: 2,
+    },
+    logoutButton: {
+        paddingVertical: 16,
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    logoutText: {
+        color: '#FF3B30',
+        fontSize: 16,
+        fontWeight: '600',
     },
 });
