@@ -4,6 +4,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 
 const STORAGE_KEY = 'daily_impact_state';
 const HISTORY_KEY = 'daily_impact_history';
+const PROFILE_KEY = 'daily_impact_profile';
 
 interface DailyState {
     date: string;
@@ -12,20 +13,34 @@ interface DailyState {
     isDone: boolean;
 }
 
+interface ProfileData {
+    name: string;
+    bio: string;
+    email: string;
+}
+
 interface ImpactContextType {
     action: SdgAction | null;
     shufflesRemaining: number;
     isDone: boolean;
     isLoading: boolean;
     history: { [key: string]: boolean };
+    profile: ProfileData;
     shuffle: () => Promise<void>;
     markDone: () => Promise<void>;
     unmarkDone: () => Promise<void>;
     refreshHistory: () => Promise<void>;
     getStats: () => { total: number; streak: number };
+    updateProfile: (data: Partial<ProfileData>) => Promise<void>;
 }
 
 const ImpactContext = createContext<ImpactContextType | undefined>(undefined);
+
+const DEFAULT_PROFILE = {
+    name: 'Lotte Boonstra',
+    bio: 'Making everyday impact counts. 🌍✨',
+    email: 'lotte@dailyimpact.com',
+};
 
 export function ImpactProvider({ children }: { children: React.ReactNode }) {
     const [action, setAction] = useState<SdgAction | null>(null);
@@ -33,6 +48,7 @@ export function ImpactProvider({ children }: { children: React.ReactNode }) {
     const [isDone, setIsDone] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [history, setHistory] = useState<{ [key: string]: boolean }>({});
+    const [profile, setProfile] = useState<ProfileData>(DEFAULT_PROFILE);
 
     const getTodayString = () => {
         return new Date().toISOString().split('T')[0];
@@ -61,6 +77,12 @@ export function ImpactProvider({ children }: { children: React.ReactNode }) {
             const storedHistory = await AsyncStorage.getItem(HISTORY_KEY);
             if (storedHistory) {
                 setHistory(JSON.parse(storedHistory));
+            }
+
+            // Load Profile
+            const storedProfile = await AsyncStorage.getItem(PROFILE_KEY);
+            if (storedProfile) {
+                setProfile(JSON.parse(storedProfile));
             }
         } catch (e) {
             console.error('Failed to load impact data', e);
@@ -140,6 +162,12 @@ export function ImpactProvider({ children }: { children: React.ReactNode }) {
         await updateHistory(today, false);
     };
 
+    const updateProfile = async (data: Partial<ProfileData>) => {
+        const newProfile = { ...profile, ...data };
+        await AsyncStorage.setItem(PROFILE_KEY, JSON.stringify(newProfile));
+        setProfile(newProfile);
+    };
+
     const getStats = () => {
         const completedDays = Object.keys(history).sort();
         const total = completedDays.length;
@@ -169,8 +197,8 @@ export function ImpactProvider({ children }: { children: React.ReactNode }) {
 
     return (
         <ImpactContext.Provider value={{
-            action, shufflesRemaining, isDone, isLoading, history,
-            shuffle, markDone, unmarkDone, refreshHistory: loadData, getStats
+            action, shufflesRemaining, isDone, isLoading, history, profile,
+            shuffle, markDone, unmarkDone, refreshHistory: loadData, getStats, updateProfile
         }}>
             {children}
         </ImpactContext.Provider>

@@ -1,10 +1,11 @@
+import { useImpact } from '@/context/ImpactContext';
 import { useImpactHistory } from '@/hooks/useImpactHistory';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import { useFocusEffect } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
-import { Dimensions, Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, Image, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 const FRIENDS = [
     { id: '1', name: 'Alex Rivers', impactCount: 42, avatar: 'https://i.pravatar.cc/150?u=alex' },
@@ -27,10 +28,17 @@ const LEVEL_SYSTEM = [
 
 export default function ProfileScreen() {
     const { history, refreshHistory, getStats } = useImpactHistory();
+    const { profile, updateProfile } = useImpact();
     const { total, streak } = getStats();
     const [profileImage, setProfileImage] = useState(DEFAULT_AVATAR);
     const [isLevelModalVisible, setIsLevelModalVisible] = useState(false);
+    const [isEditModalVisible, setIsEditModalVisible] = useState(false);
     const [viewDate, setViewDate] = useState(new Date());
+
+    // Form state
+    const [editName, setEditName] = useState(profile.name);
+    const [editBio, setEditBio] = useState(profile.bio);
+    const [editEmail, setEditEmail] = useState(profile.email);
 
     const currentLevelInfo = [...LEVEL_SYSTEM].reverse().find(l => total >= l.impacts) || LEVEL_SYSTEM[0];
 
@@ -73,6 +81,15 @@ export default function ProfileScreen() {
             setProfileImage(uri);
             await AsyncStorage.setItem(PROFILE_IMAGE_KEY, uri);
         }
+    };
+
+    const handleEditSave = async () => {
+        await updateProfile({
+            name: editName,
+            bio: editBio,
+            email: editEmail,
+        });
+        setIsEditModalVisible(false);
     };
 
     const renderCalendar = () => {
@@ -150,7 +167,15 @@ export default function ProfileScreen() {
             <View style={styles.header}>
                 <View style={{ width: 32 }} />
                 <Text style={styles.headerTitle}>Profile</Text>
-                <TouchableOpacity style={styles.settingsButton}>
+                <TouchableOpacity
+                    style={styles.settingsButton}
+                    onPress={() => {
+                        setEditName(profile.name);
+                        setEditBio(profile.bio);
+                        setEditEmail(profile.email);
+                        setIsEditModalVisible(true);
+                    }}
+                >
                     <Ionicons name="settings-outline" size={24} color="#333" />
                 </TouchableOpacity>
             </View>
@@ -173,8 +198,8 @@ export default function ProfileScreen() {
                             </View>
                         </TouchableOpacity>
 
-                        <Text style={styles.profileName}>Lotte Boonstra</Text>
-                        <Text style={styles.profileBio}>Making everyday impact counts. 🌍✨</Text>
+                        <Text style={styles.profileName}>{profile.name}</Text>
+                        <Text style={styles.profileBio}>{profile.bio}</Text>
 
                         <View style={styles.quickStatsRow}>
                             <View style={styles.quickStat}>
@@ -239,7 +264,7 @@ export default function ProfileScreen() {
                             <Ionicons name="mail-outline" size={20} color="#8E8E93" style={styles.detailIcon} />
                             <View>
                                 <Text style={styles.detailLabel}>Email</Text>
-                                <Text style={styles.detailValue}>lotte@dailyimpact.com</Text>
+                                <Text style={styles.detailValue}>{profile.email}</Text>
                             </View>
                         </View>
                         <View style={styles.detailItem}>
@@ -323,6 +348,74 @@ export default function ProfileScreen() {
                         </TouchableOpacity>
                     </View>
                 </TouchableOpacity>
+            </Modal>
+
+            {/* Edit Profile Modal */}
+            <Modal
+                visible={isEditModalVisible}
+                transparent
+                animationType="slide"
+                onRequestClose={() => setIsEditModalVisible(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>Edit Profile</Text>
+                            <Text style={styles.modalSubtitle}>Update your information</Text>
+                        </View>
+
+                        <ScrollView showsVerticalScrollIndicator={false}>
+                            <View style={styles.inputGroup}>
+                                <Text style={styles.inputLabel}>Name</Text>
+                                <TextInput
+                                    style={styles.input}
+                                    value={editName}
+                                    onChangeText={setEditName}
+                                    placeholder="Your Name"
+                                />
+                            </View>
+
+                            <View style={styles.inputGroup}>
+                                <Text style={styles.inputLabel}>Bio</Text>
+                                <TextInput
+                                    style={[styles.input, styles.textArea]}
+                                    value={editBio}
+                                    onChangeText={setEditBio}
+                                    placeholder="A little bit about you"
+                                    multiline
+                                    numberOfLines={3}
+                                />
+                            </View>
+
+                            <View style={styles.inputGroup}>
+                                <Text style={styles.inputLabel}>Email</Text>
+                                <TextInput
+                                    style={styles.input}
+                                    value={editEmail}
+                                    onChangeText={setEditEmail}
+                                    placeholder="Your Email"
+                                    keyboardType="email-address"
+                                    autoCapitalize="none"
+                                />
+                            </View>
+                        </ScrollView>
+
+                        <View style={styles.modalFooter}>
+                            <TouchableOpacity
+                                style={[styles.modalButton, styles.cancelButton]}
+                                onPress={() => setIsEditModalVisible(false)}
+                            >
+                                <Text style={styles.cancelButtonText}>Cancel</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.modalButton, styles.saveButton]}
+                                onPress={handleEditSave}
+                            >
+                                <Text style={styles.saveButtonText}>Save Changes</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
             </Modal>
         </View>
     );
@@ -723,5 +816,59 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#8E8E93',
         lineHeight: 20,
+    },
+    inputGroup: {
+        marginBottom: 20,
+    },
+    inputLabel: {
+        fontSize: 14,
+        fontWeight: '700',
+        color: '#333',
+        marginBottom: 8,
+    },
+    input: {
+        backgroundColor: '#F8F9FA',
+        borderRadius: 12,
+        padding: 12,
+        fontSize: 16,
+        color: '#333',
+        borderWidth: 1,
+        borderColor: '#E9ECEF',
+    },
+    textArea: {
+        height: 100,
+        textAlignVertical: 'top',
+    },
+    modalFooter: {
+        flexDirection: 'row',
+        gap: 12,
+        paddingTop: 20,
+        borderTopWidth: 1,
+        borderTopColor: '#f0f0f0',
+        marginTop: 10,
+    },
+    modalButton: {
+        flex: 1,
+        paddingVertical: 14,
+        borderRadius: 12,
+        alignItems: 'center',
+    },
+    saveButton: {
+        backgroundColor: '#3F7E44',
+    },
+    cancelButton: {
+        backgroundColor: '#F8F9FA',
+        borderWidth: 1,
+        borderColor: '#E9ECEF',
+    },
+    saveButtonText: {
+        color: '#fff',
+        fontWeight: '700',
+        fontSize: 15,
+    },
+    cancelButtonText: {
+        color: '#8E8E93',
+        fontWeight: '700',
+        fontSize: 15,
     },
 });
