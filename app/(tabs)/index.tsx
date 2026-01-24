@@ -13,7 +13,8 @@ export default function DailyHabitScreen() {
     try {
       const uri = await captureRef(cardRef, {
         format: 'png',
-        quality: 0.8,
+        quality: 1,
+        result: 'tmpfile',
       });
       await Sharing.shareAsync(uri);
     } catch (error) {
@@ -39,14 +40,8 @@ export default function DailyHabitScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <View
-          ref={cardRef}
-          collapsable={false}
-          style={[
-            styles.mainCard,
-            { backgroundColor: sdgColor }
-          ]}
-        >
+        {/* VISIBLE CARD - Remains exactly as the user wants */}
+        <View style={[styles.mainCard, { backgroundColor: sdgColor }]}>
           <TouchableOpacity
             activeOpacity={0.95}
             onPress={() => !isDone && markDone()}
@@ -57,7 +52,6 @@ export default function DailyHabitScreen() {
             <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 32 }]} />
           )}
 
-          {/* Top Row: Badge and Share */}
           <View style={styles.cardHeader}>
             <View style={styles.sdgBadge}>
               <Text style={styles.sdgText}>SDG {action.sdgId}: {action.sdgTitle}</Text>
@@ -72,15 +66,9 @@ export default function DailyHabitScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Main Title */}
           <Text style={styles.headline}>{action.action}</Text>
+          <Text style={styles.description}>{action.explanation}</Text>
 
-          {/* Description */}
-          <Text style={styles.description}>
-            {action.explanation}
-          </Text>
-
-          {/* Actions (Subtle on card) */}
           <View style={styles.actionContainer}>
             {!isDone ? (
               <>
@@ -109,16 +97,17 @@ export default function DailyHabitScreen() {
                 <Ionicons name="checkmark-circle" size={48} color="#fff" />
                 <Text style={styles.doneMessageText}>Great job!</Text>
                 <Text style={styles.availableText}>Available again tomorrow</Text>
-
-                {/* Very subtle undo for developers */}
-                <TouchableOpacity
-                  onPress={unmarkDone}
-                  style={styles.devUndo}
-                  activeOpacity={0.5}
-                >
-                  <Text style={styles.devUndoText}>Undo (dev)</Text>
-                </TouchableOpacity>
               </View>
+            )}
+
+            {isDone && (
+              <TouchableOpacity
+                onPress={unmarkDone}
+                style={styles.devUndo}
+                activeOpacity={0.5}
+              >
+                <Text style={styles.devUndoText}>Undo (dev)</Text>
+              </TouchableOpacity>
             )}
           </View>
         </View>
@@ -127,6 +116,42 @@ export default function DailyHabitScreen() {
           <Text style={styles.footerNote}>Tap the card to complete your daily impact</Text>
         )}
       </ScrollView>
+
+      {/* HIDDEN SHAREABLE CARD - Off-screen specifically for captureRef */}
+      <View style={styles.offscreenContainer} pointerEvents="none">
+        <View
+          ref={cardRef}
+          collapsable={false}
+          style={[styles.mainCard, { backgroundColor: sdgColor, width: 350 }]}
+        >
+          {isDone && (
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 32 }]} />
+          )}
+
+          <View style={styles.cardHeader}>
+            <View style={styles.sdgBadge}>
+              <Text style={styles.sdgText}>SDG {action.sdgId}: {action.sdgTitle}</Text>
+            </View>
+          </View>
+
+          <Text style={styles.headline}>{action.action}</Text>
+          <Text style={styles.description}>{action.explanation}</Text>
+
+          <View style={styles.actionContainer}>
+            {isDone && (
+              <View style={styles.doneMessage}>
+                <Ionicons name="checkmark-circle" size={48} color="#fff" />
+                <Text style={styles.doneMessageText}>Great job!</Text>
+              </View>
+            )}
+
+            <View style={styles.shareBranding}>
+              <Text style={styles.shareBrandingTitle}>Daily Impact</Text>
+              <Text style={styles.shareBrandingText}>Small daily actions for a better tomorrow</Text>
+            </View>
+          </View>
+        </View>
+      </View>
     </View>
   );
 }
@@ -274,10 +299,34 @@ const styles = StyleSheet.create({
     marginTop: 20,
     padding: 10,
   },
+  offscreenContainer: {
+    position: 'absolute',
+    left: -10000,
+    top: 0,
+  },
   devUndoText: {
     fontSize: 12,
     color: 'rgba(255,255,255,0.4)',
     textDecorationLine: 'underline',
+  },
+  shareBranding: {
+    marginTop: 20,
+    alignItems: 'center',
+    paddingTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.2)',
+  },
+  shareBrandingTitle: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '800',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+  },
+  shareBrandingText: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 12,
+    marginTop: 4,
   },
 });
 
