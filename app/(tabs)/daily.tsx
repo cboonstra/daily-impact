@@ -1,17 +1,20 @@
+import { useDailyImpact } from '@/hooks/useDailyImpact';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import React from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function DailyHabitScreen() {
-    const insets = useSafeAreaInsets();
-    const router = useRouter();
-    const [isDone, setIsDone] = React.useState(false);
+    const { action, isDone, shufflesRemaining, isLoading, shuffle, markDone, unmarkDone } = useDailyImpact();
 
-    // SDG 13 Color
-    const sdgColor = '#3F7E44';
-    const sdgColorDone = '#2D5A31'; // Darker/deeper green when done
+    if (isLoading || !action) {
+        return (
+            <View style={[styles.container, styles.centered]}>
+                <ActivityIndicator size="large" color="#3F7E44" />
+            </View>
+        );
+    }
+
+    const sdgColor = action.color;
 
     return (
         <View style={styles.container}>
@@ -23,23 +26,27 @@ export default function DailyHabitScreen() {
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 <TouchableOpacity
                     activeOpacity={0.95}
-                    onPress={() => isDone && setIsDone(false)}
+                    onPress={() => !isDone && markDone()}
                     style={[
                         styles.mainCard,
-                        { backgroundColor: isDone ? sdgColorDone : sdgColor }
+                        { backgroundColor: sdgColor }
                     ]}
                 >
+                    {isDone && (
+                        <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 32 }]} />
+                    )}
+
                     {/* SDG Badge (Subtle on card) */}
                     <View style={styles.sdgBadge}>
-                        <Text style={styles.sdgText}>Climate Action</Text>
+                        <Text style={styles.sdgText}>SDG {action.sdgId}: {action.sdgTitle}</Text>
                     </View>
 
                     {/* Main Title */}
-                    <Text style={styles.headline}>Don't eat meat{"\n"}for the day</Text>
+                    <Text style={styles.headline}>{action.action}</Text>
 
                     {/* Description */}
                     <Text style={styles.description}>
-                        Eating meat negatively contributes to deforestation and loss of biodiversity.
+                        {action.explanation}
                     </Text>
 
                     {/* Actions (Subtle on card) */}
@@ -48,23 +55,38 @@ export default function DailyHabitScreen() {
                             <>
                                 <TouchableOpacity
                                     style={styles.subtleButton}
-                                    onPress={() => setIsDone(true)}
+                                    onPress={markDone}
                                     activeOpacity={0.7}
                                 >
-                                    <Ionicons name="checkmark-circle-outline" size={24} color="#fff" />
-                                    <Text style={styles.subtleButtonText}>Mark as Done</Text>
+                                    <Ionicons name="checkmark-circle-outline" size={24} color={sdgColor} />
+                                    <Text style={[styles.subtleButtonText, { color: sdgColor }]}>Mark as Done</Text>
                                 </TouchableOpacity>
 
-                                <TouchableOpacity style={styles.minimalShuffle} activeOpacity={0.6}>
-                                    <Ionicons name="shuffle-outline" size={20} color="rgba(255,255,255,0.7)" />
-                                    <Text style={styles.minimalShuffleText}>Shuffle (3 left)</Text>
-                                </TouchableOpacity>
+                                {shufflesRemaining > 0 && (
+                                    <TouchableOpacity
+                                        style={styles.minimalShuffle}
+                                        onPress={shuffle}
+                                        activeOpacity={0.6}
+                                    >
+                                        <Ionicons name="shuffle-outline" size={20} color="rgba(255,255,255,0.7)" />
+                                        <Text style={styles.minimalShuffleText}>Shuffle ({shufflesRemaining} left)</Text>
+                                    </TouchableOpacity>
+                                )}
                             </>
                         ) : (
                             <View style={styles.doneMessage}>
                                 <Ionicons name="checkmark-circle" size={48} color="#fff" />
                                 <Text style={styles.doneMessageText}>Great job!</Text>
                                 <Text style={styles.availableText}>Available again tomorrow</Text>
+
+                                {/* Very subtle undo for developers */}
+                                <TouchableOpacity
+                                    onPress={unmarkDone}
+                                    style={styles.devUndo}
+                                    activeOpacity={0.5}
+                                >
+                                    <Text style={styles.devUndoText}>Undo (dev)</Text>
+                                </TouchableOpacity>
                             </View>
                         )}
                     </View>
@@ -82,6 +104,10 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#F8F9FA',
+    },
+    centered: {
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     header: {
         paddingTop: 60,
@@ -161,7 +187,6 @@ const styles = StyleSheet.create({
     subtleButtonText: {
         fontSize: 18,
         fontWeight: '700',
-        color: '#3F7E44', // Match SDG color
         letterSpacing: -0.4,
     },
     minimalShuffle: {
@@ -199,4 +224,15 @@ const styles = StyleSheet.create({
         marginTop: 20,
         fontWeight: '500',
     },
+    devUndo: {
+        marginTop: 20,
+        padding: 10,
+    },
+    devUndoText: {
+        fontSize: 12,
+        color: 'rgba(255,255,255,0.4)',
+        textDecorationLine: 'underline',
+    },
 });
+
+
