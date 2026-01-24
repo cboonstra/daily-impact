@@ -205,7 +205,7 @@ export default function ProfileScreen() {
                                         </View>
                                         <View style={styles.levelInfo}>
                                             <Text style={[styles.levelName, isReached && { color: '#333' }]}>{l.name}</Text>
-                                            <Text style={styles.levelRequirement}>{l.impacts} {l.impacts === 1 ? 'habit' : 'habits'} required</Text>
+                                            <Text style={styles.levelRequirement}>{l.impacts} {l.impacts === 1 ? 'impact' : 'impacts'} required</Text>
                                         </View>
                                         {isReached && (
                                             <Ionicons name="checkmark-circle" size={24} color={l.color} />

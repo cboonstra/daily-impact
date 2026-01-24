@@ -33,7 +33,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Daily Habit',
+          title: 'Daily Impact',
           tabBarIcon: ({ color }) => <Ionicons size={24} name="ellipse-outline" color={color} />,
         }}
       />
