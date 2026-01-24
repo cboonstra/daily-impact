@@ -48,11 +48,7 @@ export default function HomeScreen() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton}>
-          <Ionicons name="chevron-back" size={28} color="#333" />
-        </TouchableOpacity>
         <Text style={styles.headerTitle}>SDGs</Text>
-        <View style={{ width: 44 }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -82,32 +78,13 @@ export default function HomeScreen() {
 
                 <View style={styles.detailHeaderInfo}>
                   <Text style={styles.detailNumber}>{selectedSdg.id}</Text>
-                  <Text style={styles.detailTitleSmall}>{selectedSdg.title}</Text>
+                  <Text style={styles.detailTitleSmall}>SDG</Text>
                 </View>
 
                 <Text style={styles.detailTitleLarge}>{selectedSdg.title}</Text>
                 <Text style={styles.detailDescriptionWhite}>
                   {selectedSdg.description}
                 </Text>
-
-                <View style={styles.statsRow}>
-                  <View style={styles.statItem}>
-                    <Text style={styles.statValue}>{selectedSdg.targets || '-'}</Text>
-                    <Text style={styles.statLabel}>Targets</Text>
-                  </View>
-                  <View style={styles.statItem}>
-                    <Text style={styles.statValue}>{selectedSdg.publications || '-'}</Text>
-                    <Text style={styles.statLabel}>Publications</Text>
-                  </View>
-                  <View style={styles.statItem}>
-                    <Text style={styles.statValue}>{selectedSdg.actions || '-'}</Text>
-                    <Text style={styles.statLabel}>Actions</Text>
-                  </View>
-                </View>
-
-                <TouchableOpacity style={styles.moreInfoButtonOutline}>
-                  <Text style={styles.moreInfoButtonTextWhite}>More info</Text>
-                </TouchableOpacity>
               </View>
             )}
           </View>
@@ -123,17 +100,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     paddingTop: 60,
     paddingBottom: 15,
     paddingHorizontal: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
-  },
-  backButton: {
-    padding: 8,
   },
   headerTitle: {
     fontSize: 22,
@@ -147,7 +120,7 @@ const styles = StyleSheet.create({
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
     gap: 12,
   },
   tile: {
@@ -235,38 +208,5 @@ const styles = StyleSheet.create({
     opacity: 0.9,
     lineHeight: 24,
     marginBottom: 25,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 30,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.2)',
-    paddingTop: 20,
-  },
-  statItem: {
-    alignItems: 'flex-start',
-  },
-  statValue: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#fff',
-  },
-  statLabel: {
-    fontSize: 14,
-    color: '#fff',
-    opacity: 0.8,
-  },
-  moreInfoButtonOutline: {
-    borderWidth: 1,
-    borderColor: '#fff',
-    borderRadius: 12,
-    paddingVertical: 15,
-    alignItems: 'center',
-  },
-  moreInfoButtonTextWhite: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '600',
   },
 });
