@@ -1,12 +1,13 @@
 import { useImpactHistory } from '@/hooks/useImpactHistory';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
-import React, { useCallback } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function MedalsScreen() {
     const { history, refreshHistory, getStats } = useImpactHistory();
     const { total, streak } = getStats();
+    const [viewDate, setViewDate] = useState(new Date());
 
     // Refresh history when screen comes into focus
     useFocusEffect(
@@ -15,15 +16,27 @@ export default function MedalsScreen() {
         }, [])
     );
 
+    const handlePrevMonth = () => {
+        const newDate = new Date(viewDate);
+        newDate.setMonth(newDate.getMonth() - 1);
+        setViewDate(newDate);
+    };
+
+    const handleNextMonth = () => {
+        const newDate = new Date(viewDate);
+        newDate.setMonth(newDate.getMonth() + 1);
+        setViewDate(newDate);
+    };
+
     const renderCalendar = () => {
         const today = new Date();
-        const currentMonth = today.getMonth();
-        const currentYear = today.getFullYear();
+        const viewMonth = viewDate.getMonth();
+        const viewYear = viewDate.getFullYear();
 
-        const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-        const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
+        const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+        const firstDayOfMonth = new Date(viewYear, viewMonth, 1).getDay();
 
-        const monthName = today.toLocaleString('default', { month: 'long' });
+        const monthName = viewDate.toLocaleString('default', { month: 'long' });
 
         // Adjusted for Monday start (0=Sun, 1=Mon... -> 0=Mon, 1=Tue... 6=Sun)
         const adjustedFirstDay = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1;
@@ -36,9 +49,9 @@ export default function MedalsScreen() {
 
         // Days of the month
         for (let d = 1; d <= daysInMonth; d++) {
-            const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+            const dateStr = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
             const isCompleted = history[dateStr];
-            const isToday = d === today.getDate();
+            const isToday = d === today.getDate() && viewMonth === today.getMonth() && viewYear === today.getFullYear();
 
             days.push(
                 <View key={d} style={styles.calendarDayContainer}>
@@ -61,7 +74,15 @@ export default function MedalsScreen() {
         return (
             <View style={styles.calendarCard}>
                 <View style={styles.calendarHeader}>
-                    <Text style={styles.monthTitle}>{monthName} {currentYear}</Text>
+                    <TouchableOpacity onPress={handlePrevMonth} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                        <Ionicons name="chevron-back" size={20} color="#333" />
+                    </TouchableOpacity>
+
+                    <Text style={styles.monthTitle}>{monthName} {viewYear}</Text>
+
+                    <TouchableOpacity onPress={handleNextMonth} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                        <Ionicons name="chevron-forward" size={20} color="#333" />
+                    </TouchableOpacity>
                 </View>
 
                 <View style={styles.weekDays}>
@@ -108,7 +129,7 @@ export default function MedalsScreen() {
                 {renderCalendar()}
 
                 <View style={styles.infoBox}>
-                    <Ionicons name="information-circle-outline" size={20} color="#8E8E93" />
+                    <Ionicons name="sparkles-outline" size={20} color="#FFB300" />
                     <Text style={styles.infoText}>
                         Consistent actions create the biggest impact. Keep it up!
                     </Text>
@@ -195,8 +216,10 @@ const styles = StyleSheet.create({
         elevation: 2,
     },
     calendarHeader: {
-        marginBottom: 20,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
         alignItems: 'center',
+        marginBottom: 20,
     },
     monthTitle: {
         fontSize: 18,

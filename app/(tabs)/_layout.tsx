@@ -24,17 +24,17 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="daily"
+        name="explore"
         options={{
-          title: 'Daily Habit',
-          tabBarIcon: ({ color }) => <Ionicons size={24} name="ellipse-outline" color={color} />,
+          title: 'SDG\'s',
+          tabBarIcon: ({ color }) => <Ionicons size={24} name="apps" color={color} />,
         }}
       />
       <Tabs.Screen
         name="index"
         options={{
-          title: 'SDG\'s',
-          tabBarIcon: ({ color }) => <Ionicons size={24} name="apps" color={color} />,
+          title: 'Daily Habit',
+          tabBarIcon: ({ color }) => <Ionicons size={24} name="ellipse-outline" color={color} />,
         }}
       />
       <Tabs.Screen
