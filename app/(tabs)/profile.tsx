@@ -1,7 +1,9 @@
 import { useImpactHistory } from '@/hooks/useImpactHistory';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as ImagePicker from 'expo-image-picker';
 import { useFocusEffect } from 'expo-router';
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const FRIENDS = [
@@ -11,15 +13,42 @@ const FRIENDS = [
     { id: '4', name: 'Elena Petrova', impactCount: 89, avatar: 'https://i.pravatar.cc/150?u=elena' },
 ];
 
+const PROFILE_IMAGE_KEY = 'user_profile_image';
+const DEFAULT_AVATAR = 'https://i.pravatar.cc/150?u=lotte';
+
 export default function ProfileScreen() {
     const { refreshHistory, getStats } = useImpactHistory();
     const { total, streak } = getStats();
+    const [profileImage, setProfileImage] = useState(DEFAULT_AVATAR);
 
     useFocusEffect(
         useCallback(() => {
             refreshHistory();
         }, [])
     );
+
+    useEffect(() => {
+        const loadProfileImage = async () => {
+            const savedImage = await AsyncStorage.getItem(PROFILE_IMAGE_KEY);
+            if (savedImage) setProfileImage(savedImage);
+        };
+        loadProfileImage();
+    }, []);
+
+    const pickImage = async () => {
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ['images'],
+            allowsEditing: true,
+            aspect: [1, 1],
+            quality: 1,
+        });
+
+        if (!result.canceled) {
+            const uri = result.assets[0].uri;
+            setProfileImage(uri);
+            await AsyncStorage.setItem(PROFILE_IMAGE_KEY, uri);
+        }
+    };
 
     return (
         <View style={styles.container}>
@@ -33,15 +62,19 @@ export default function ProfileScreen() {
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 {/* Profile Brief */}
                 <View style={styles.profileBriefCard}>
-                    <View style={styles.avatarContainer}>
+                    <TouchableOpacity
+                        onPress={pickImage}
+                        activeOpacity={0.8}
+                        style={styles.avatarContainer}
+                    >
                         <Image
-                            source={{ uri: 'https://i.pravatar.cc/150?u=lotte' }}
+                            source={{ uri: profileImage }}
                             style={styles.avatar}
                         />
                         <View style={styles.editAvatarBadge}>
                             <Ionicons name="camera" size={16} color="#fff" />
                         </View>
-                    </View>
+                    </TouchableOpacity>
 
                     <Text style={styles.profileName}>Lotte Boonstra</Text>
                     <Text style={styles.profileBio}>Making everyday impact counts. 🌍✨</Text>
@@ -91,16 +124,18 @@ export default function ProfileScreen() {
                 </View>
 
                 {/* Account Details Section */}
-                <Text style={styles.sectionTitle}>Account Details</Text>
+                <View style={styles.sectionHeader}>
+                    <Text style={styles.sectionTitle}>Account Details</Text>
+                </View>
                 <View style={styles.detailsCard}>
-                    <View style={styles.detailItem}>
+                    <View style={[styles.detailItem, styles.friendDivider]}>
                         <Ionicons name="mail-outline" size={20} color="#8E8E93" style={styles.detailIcon} />
                         <View>
                             <Text style={styles.detailLabel}>Email</Text>
                             <Text style={styles.detailValue}>lotte@dailyimpact.com</Text>
                         </View>
                     </View>
-                    <View style={[styles.detailItem, styles.friendDivider]}>
+                    <View style={styles.detailItem}>
                         <Ionicons name="calendar-outline" size={20} color="#8E8E93" style={styles.detailIcon} />
                         <View>
                             <Text style={styles.detailLabel}>Joined</Text>
