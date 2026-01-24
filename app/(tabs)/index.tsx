@@ -62,7 +62,7 @@ export default function DailyHabitScreen() {
               style={styles.shareButton}
               activeOpacity={0.7}
             >
-              <Ionicons name="share-outline" size={24} color="#fff" />
+              <Ionicons name="share-social-outline" size={22} color="#fff" />
             </TouchableOpacity>
           </View>
 
@@ -298,6 +298,7 @@ const styles = StyleSheet.create({
   devUndo: {
     marginTop: 20,
     padding: 10,
+    alignItems: 'center',
   },
   offscreenContainer: {
     position: 'absolute',
