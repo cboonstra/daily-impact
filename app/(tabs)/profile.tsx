@@ -5,7 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import { useFocusEffect } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
-import { Dimensions, Image, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Dimensions, Image, Modal, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 const FRIENDS = [
     { id: '1', name: 'Alex Rivers', impactCount: 42, avatar: 'https://i.pravatar.cc/150?u=alex' },
@@ -90,6 +90,28 @@ export default function ProfileScreen() {
             email: editEmail,
         });
         setIsEditModalVisible(false);
+    };
+
+    const handleInviteFriend = async () => {
+        try {
+            const result = await Share.share({
+                message: `Join me on Daily Impact! I'm making everyday sustainable choices and I'd love to have you in my impact circle. Download here: [Link]`,
+                title: 'Invite to Daily Impact',
+            });
+
+            if (result.action === Share.sharedAction) {
+                if (result.activityType) {
+                    // Shared with activity type
+                } else {
+                    // Shared
+                    Alert.alert('Invitation Sent!', 'Your friend has been invited to join Daily Impact.');
+                }
+            } else if (result.action === Share.dismissedAction) {
+                // Dismissed
+            }
+        } catch (error: any) {
+            Alert.alert('Error', error.message);
+        }
     };
 
     const renderCalendar = () => {
@@ -232,7 +254,7 @@ export default function ProfileScreen() {
                     {/* Friends Section */}
                     <View style={styles.sectionHeader}>
                         <Text style={styles.sectionTitle}>Friends</Text>
-                        <TouchableOpacity>
+                        <TouchableOpacity onPress={handleInviteFriend}>
                             <Text style={styles.seeAllText}>Add Friend</Text>
                         </TouchableOpacity>
                     </View>

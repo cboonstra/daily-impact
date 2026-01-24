@@ -1,13 +1,59 @@
 import { useDailyImpact } from '@/hooks/useDailyImpact';
 import { Ionicons } from '@expo/vector-icons';
 import * as Sharing from 'expo-sharing';
-import React, { useRef } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Animated, Easing, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { captureRef } from 'react-native-view-shot';
 
 export default function DailyHabitScreen() {
   const { action, isDone, shufflesRemaining, isLoading, shuffle, markDone, unmarkDone } = useDailyImpact();
   const cardRef = useRef<View>(null);
+
+  // Animations
+  const popAnim = useRef(new Animated.Value(0)).current;
+  const burstAnim = useRef(new Animated.Value(0)).current;
+  const colorAnim = useRef(new Animated.Value(0)).current;
+  const [showParticles, setShowParticles] = useState(false);
+  const [prevColor, setPrevColor] = useState(action?.color || '#3F7E44');
+
+  useEffect(() => {
+    if (action?.color) {
+      colorAnim.setValue(0);
+      Animated.timing(colorAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: false, // Colors need false
+      }).start(() => {
+        setPrevColor(action.color);
+      });
+    }
+  }, [action?.color]);
+
+  useEffect(() => {
+    if (isDone) {
+      // Trigger happy animation
+      setShowParticles(true);
+      popAnim.setValue(0);
+      burstAnim.setValue(0);
+
+      Animated.parallel([
+        Animated.spring(popAnim, {
+          toValue: 1,
+          tension: 50,
+          friction: 4,
+          useNativeDriver: true,
+        }),
+        Animated.timing(burstAnim, {
+          toValue: 1,
+          duration: 1500,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        })
+      ]).start(() => {
+        setTimeout(() => setShowParticles(false), 2000);
+      });
+    }
+  }, [isDone]);
 
   const handleShare = async () => {
     try {
@@ -30,7 +76,61 @@ export default function DailyHabitScreen() {
     );
   }
 
-  const sdgColor = action.color;
+  const animatedBgColor = colorAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [prevColor, action.color],
+  });
+
+  const renderParticles = () => {
+    if (!showParticles) return null;
+
+    const particles = ['✨', '🌱', '❤️', '🌟', '🍃', '🔥', '🌍', '🌎', '🌏', '🦋', '🌸', '🌈'];
+    return particles.map((p, i) => {
+      const angle = (i / particles.length) * Math.PI * 2;
+      const x = Math.cos(angle) * 200;
+      const y = Math.sin(angle) * 200;
+
+      const translateY = burstAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0, y - 60],
+      });
+
+      const translateX = burstAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0, x],
+      });
+
+      const rotate = burstAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: ['0deg', (i % 2 === 0 ? 360 : -360) + 'deg'],
+      });
+
+      const opacity = burstAnim.interpolate({
+        inputRange: [0, 0.1, 0.8, 1],
+        outputRange: [0, 1, 1, 0],
+      });
+
+      const scale = burstAnim.interpolate({
+        inputRange: [0, 0.2, 1],
+        outputRange: [0.3, 1.8, 0.8],
+      });
+
+      return (
+        <Animated.Text
+          key={i}
+          style={[
+            styles.particle,
+            {
+              transform: [{ translateX }, { translateY }, { scale }, { rotate }],
+              opacity,
+            }
+          ]}
+        >
+          {p}
+        </Animated.Text>
+      );
+    });
+  };
 
   return (
     <View style={styles.container}>
@@ -41,7 +141,7 @@ export default function DailyHabitScreen() {
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={{ flex: 1 }}>
-          <View style={[styles.mainCard, { backgroundColor: sdgColor }]}>
+          <Animated.View style={[styles.mainCard, { backgroundColor: animatedBgColor }]}>
             <TouchableOpacity
               activeOpacity={0.95}
               onPress={() => !isDone && markDone()}
@@ -77,8 +177,8 @@ export default function DailyHabitScreen() {
                     onPress={markDone}
                     activeOpacity={0.7}
                   >
-                    <Ionicons name="checkmark-circle-outline" size={24} color={sdgColor} />
-                    <Text style={[styles.subtleButtonText, { color: sdgColor }]}>Mark as Done</Text>
+                    <Ionicons name="checkmark-circle-outline" size={24} color={action.color} />
+                    <Text style={[styles.subtleButtonText, { color: action.color }]}>Mark as Done</Text>
                   </TouchableOpacity>
 
                   {shufflesRemaining > 0 && (
@@ -94,9 +194,14 @@ export default function DailyHabitScreen() {
                 </>
               ) : (
                 <View style={styles.doneMessage}>
-                  <Ionicons name="checkmark-circle" size={48} color="#fff" />
-                  <Text style={styles.doneMessageText}>Great job!</Text>
-                  <Text style={styles.availableText}>Available again tomorrow</Text>
+                  <View style={styles.completionAnimationContainer}>
+                    {renderParticles()}
+                    <Animated.View style={{ transform: [{ scale: popAnim }] }}>
+                      <Ionicons name="checkmark-circle" size={80} color="#fff" />
+                    </Animated.View>
+                  </View>
+                  <Animated.Text style={[styles.doneMessageText, { opacity: popAnim }]}>Great job!</Animated.Text>
+                  <Animated.Text style={[styles.availableText, { opacity: popAnim }]}>Available again tomorrow</Animated.Text>
                 </View>
               )}
 
@@ -110,7 +215,7 @@ export default function DailyHabitScreen() {
                 </TouchableOpacity>
               )}
             </View>
-          </View>
+          </Animated.View>
 
           {!isDone && (
             <Text style={styles.footerNote}>Tap the card to complete your daily impact</Text>
@@ -131,7 +236,7 @@ export default function DailyHabitScreen() {
         <View
           ref={cardRef}
           collapsable={false}
-          style={[styles.mainCard, { backgroundColor: sdgColor, width: 350 }]}
+          style={[styles.mainCard, { backgroundColor: action.color, width: 350 }]}
         >
           {isDone && (
             <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 32 }]} />
@@ -198,7 +303,7 @@ const styles = StyleSheet.create({
     borderRadius: 32,
     padding: 32,
     paddingTop: 24,
-    minHeight: 520,
+    height: 560,
     justifyContent: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 12 },
@@ -284,17 +389,17 @@ const styles = StyleSheet.create({
   },
   doneMessage: {
     alignItems: 'center',
-    paddingVertical: 20,
+    paddingVertical: 10,
   },
   doneMessageText: {
     fontSize: 24,
     fontWeight: '800',
     color: '#fff',
-    marginTop: 12,
-    marginBottom: 4,
+    marginTop: 8,
+    marginBottom: 2,
   },
   availableText: {
-    fontSize: 15,
+    fontSize: 14,
     color: 'rgba(255,255,255,0.7)',
     fontWeight: '500',
   },
@@ -356,6 +461,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#8E8E93',
     lineHeight: 20,
+  },
+  completionAnimationContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 100,
+    width: '100%',
+    marginBottom: 5,
+  },
+  particle: {
+    position: 'absolute',
+    fontSize: 24,
   },
 });
 
