@@ -19,8 +19,8 @@ export default function TabLayout() {
       <Tabs.Screen
         name="medals"
         options={{
-          title: 'Medals',
-          tabBarIcon: ({ color }) => <Ionicons size={24} name="trophy-outline" color={color} />,
+          title: 'Progress',
+          tabBarIcon: ({ color }) => <Ionicons size={24} name="calendar-outline" color={color} />,
         }}
       />
       <Tabs.Screen

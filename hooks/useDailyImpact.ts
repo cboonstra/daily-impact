@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
 
 const STORAGE_KEY = 'daily_impact_state';
+const HISTORY_KEY = 'daily_impact_history';
 
 interface DailyState {
     date: string;
@@ -19,6 +20,21 @@ export function useDailyImpact() {
 
     const getTodayString = () => {
         return new Date().toISOString().split('T')[0];
+    };
+
+    const updateHistory = async (date: string, completed: boolean) => {
+        try {
+            const stored = await AsyncStorage.getItem(HISTORY_KEY);
+            const history = stored ? JSON.parse(stored) : {};
+            if (completed) {
+                history[date] = true;
+            } else {
+                delete history[date];
+            }
+            await AsyncStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+        } catch (e) {
+            console.error('Failed to update history', e);
+        }
     };
 
     const loadState = async () => {
@@ -77,6 +93,7 @@ export function useDailyImpact() {
             setAction(nextAction);
             setShufflesRemaining(newState.shufflesRemaining);
             setIsDone(false);
+            await updateHistory(today, false);
         } catch (e) {
             console.error('Failed to shuffle', e);
         }
@@ -96,6 +113,7 @@ export function useDailyImpact() {
         try {
             await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
             setIsDone(true);
+            await updateHistory(today, true);
         } catch (e) {
             console.error('Failed to mark done', e);
         }
@@ -115,6 +133,7 @@ export function useDailyImpact() {
         try {
             await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
             setIsDone(false);
+            await updateHistory(today, false);
         } catch (e) {
             console.error('Failed to unmark done', e);
         }
