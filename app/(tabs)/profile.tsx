@@ -53,6 +53,7 @@ export default function ProfileScreen() {
     return (
         <View style={styles.container}>
             <View style={styles.header}>
+                <View style={{ width: 32 }} />
                 <Text style={styles.headerTitle}>Profile</Text>
                 <TouchableOpacity style={styles.settingsButton}>
                     <Ionicons name="settings-outline" size={24} color="#333" />
