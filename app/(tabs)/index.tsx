@@ -40,81 +40,82 @@ export default function DailyHabitScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* VISIBLE CARD - Remains exactly as the user wants */}
-        <View style={[styles.mainCard, { backgroundColor: sdgColor }]}>
-          <TouchableOpacity
-            activeOpacity={0.95}
-            onPress={() => !isDone && markDone()}
-            style={StyleSheet.absoluteFill}
-          />
-
-          {isDone && (
-            <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 32 }]} />
-          )}
-
-          <View style={styles.cardHeader}>
-            <View style={styles.sdgBadge}>
-              <Text style={styles.sdgText}>SDG {action.sdgId}: {action.sdgTitle}</Text>
-            </View>
-
+        <View style={{ flex: 1 }}>
+          <View style={[styles.mainCard, { backgroundColor: sdgColor }]}>
             <TouchableOpacity
-              onPress={handleShare}
-              style={styles.shareButton}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="share-social-outline" size={22} color="#fff" />
-            </TouchableOpacity>
-          </View>
-
-          <Text style={styles.headline}>{action.action}</Text>
-          <Text style={styles.description}>{action.explanation}</Text>
-
-          <View style={styles.actionContainer}>
-            {!isDone ? (
-              <>
-                <TouchableOpacity
-                  style={styles.subtleButton}
-                  onPress={markDone}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="checkmark-circle-outline" size={24} color={sdgColor} />
-                  <Text style={[styles.subtleButtonText, { color: sdgColor }]}>Mark as Done</Text>
-                </TouchableOpacity>
-
-                {shufflesRemaining > 0 && (
-                  <TouchableOpacity
-                    style={styles.minimalShuffle}
-                    onPress={shuffle}
-                    activeOpacity={0.6}
-                  >
-                    <Ionicons name="shuffle-outline" size={20} color="rgba(255,255,255,0.7)" />
-                    <Text style={styles.minimalShuffleText}>Shuffle ({shufflesRemaining} left)</Text>
-                  </TouchableOpacity>
-                )}
-              </>
-            ) : (
-              <View style={styles.doneMessage}>
-                <Ionicons name="checkmark-circle" size={48} color="#fff" />
-                <Text style={styles.doneMessageText}>Great job!</Text>
-                <Text style={styles.availableText}>Available again tomorrow</Text>
-              </View>
-            )}
+              activeOpacity={0.95}
+              onPress={() => !isDone && markDone()}
+              style={StyleSheet.absoluteFill}
+            />
 
             {isDone && (
-              <TouchableOpacity
-                onPress={unmarkDone}
-                style={styles.devUndo}
-                activeOpacity={0.5}
-              >
-                <Text style={styles.devUndoText}>Undo (dev)</Text>
-              </TouchableOpacity>
+              <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 32 }]} />
             )}
-          </View>
-        </View>
 
-        {!isDone && (
-          <Text style={styles.footerNote}>Tap the card to complete your daily impact</Text>
-        )}
+            <View style={styles.cardHeader}>
+              <View style={styles.sdgBadge}>
+                <Text style={styles.sdgText}>SDG {action.sdgId}: {action.sdgTitle}</Text>
+              </View>
+
+              <TouchableOpacity
+                onPress={handleShare}
+                style={styles.shareButton}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="share-social-outline" size={22} color="#fff" />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.headline}>{action.action}</Text>
+            <Text style={styles.description}>{action.explanation}</Text>
+
+            <View style={styles.actionContainer}>
+              {!isDone ? (
+                <>
+                  <TouchableOpacity
+                    style={styles.subtleButton}
+                    onPress={markDone}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="checkmark-circle-outline" size={24} color={sdgColor} />
+                    <Text style={[styles.subtleButtonText, { color: sdgColor }]}>Mark as Done</Text>
+                  </TouchableOpacity>
+
+                  {shufflesRemaining > 0 && (
+                    <TouchableOpacity
+                      style={styles.minimalShuffle}
+                      onPress={shuffle}
+                      activeOpacity={0.6}
+                    >
+                      <Ionicons name="shuffle-outline" size={20} color="rgba(255,255,255,0.7)" />
+                      <Text style={styles.minimalShuffleText}>Shuffle ({shufflesRemaining} left)</Text>
+                    </TouchableOpacity>
+                  )}
+                </>
+              ) : (
+                <View style={styles.doneMessage}>
+                  <Ionicons name="checkmark-circle" size={48} color="#fff" />
+                  <Text style={styles.doneMessageText}>Great job!</Text>
+                  <Text style={styles.availableText}>Available again tomorrow</Text>
+                </View>
+              )}
+
+              {isDone && (
+                <TouchableOpacity
+                  onPress={unmarkDone}
+                  style={styles.devUndo}
+                  activeOpacity={0.5}
+                >
+                  <Text style={styles.devUndoText}>Undo (dev)</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+
+          {!isDone && (
+            <Text style={styles.footerNote}>Tap the card to complete your daily impact</Text>
+          )}
+        </View>
 
         {/* Footer Tag */}
         <View style={styles.infoBox}>
@@ -191,6 +192,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 20,
     paddingBottom: 40,
+    flexGrow: 1,
   },
   mainCard: {
     borderRadius: 32,

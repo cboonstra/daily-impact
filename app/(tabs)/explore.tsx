@@ -52,8 +52,10 @@ export default function HomeScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <View style={styles.grid}>
-          {SDGS.map(renderSdgTile)}
+        <View style={{ flex: 1 }}>
+          <View style={styles.grid}>
+            {SDGS.map(renderSdgTile)}
+          </View>
         </View>
 
         {/* Footer Tag */}
@@ -124,6 +126,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 16,
     paddingBottom: 100,
+    flexGrow: 1,
   },
   grid: {
     flexDirection: 'row',

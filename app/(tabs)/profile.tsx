@@ -156,103 +156,105 @@ export default function ProfileScreen() {
             </View>
 
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-                {/* Profile Brief */}
-                <View style={styles.profileBriefCard}>
-                    <TouchableOpacity
-                        onPress={pickImage}
-                        activeOpacity={0.8}
-                        style={styles.avatarContainer}
-                    >
-                        <Image
-                            source={{ uri: profileImage }}
-                            style={styles.avatar}
-                        />
-                        <View style={styles.editAvatarBadge}>
-                            <Ionicons name="camera" size={16} color="#fff" />
-                        </View>
-                    </TouchableOpacity>
-
-                    <Text style={styles.profileName}>Lotte Boonstra</Text>
-                    <Text style={styles.profileBio}>Making everyday impact counts. 🌍✨</Text>
-
-                    <View style={styles.quickStatsRow}>
-                        <View style={styles.quickStat}>
-                            <Text style={styles.quickStatValue}>{total}</Text>
-                            <Text style={styles.quickStatLabel}>{total === 1 ? 'Impact' : 'Impacts'}</Text>
-                        </View>
-                        <View style={styles.statsDivider} />
-                        <View style={styles.quickStat}>
-                            <Text style={styles.quickStatValue}>{streak}</Text>
-                            <Text style={styles.quickStatLabel}>Days Streak</Text>
-                        </View>
-                        <View style={styles.statsDivider} />
+                <View style={{ flex: 1 }}>
+                    {/* Profile Brief */}
+                    <View style={styles.profileBriefCard}>
                         <TouchableOpacity
-                            style={styles.quickStat}
-                            onPress={() => setIsLevelModalVisible(true)}
+                            onPress={pickImage}
+                            activeOpacity={0.8}
+                            style={styles.avatarContainer}
                         >
-                            <Text style={[styles.quickStatValue, { color: currentLevelInfo.color }]}>Level {currentLevelInfo.level}</Text>
-                            <Text style={styles.quickStatLabel}>Impact Level</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-
-                {/* Habit Calendar Section */}
-                <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>Impact Calendar</Text>
-                </View>
-                {renderCalendar()}
-                <View style={{ height: 32 }} />
-
-                {/* Friends Section */}
-                <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>Friends</Text>
-                    <TouchableOpacity>
-                        <Text style={styles.seeAllText}>Add Friend</Text>
-                    </TouchableOpacity>
-                </View>
-
-                <View style={styles.friendsCard}>
-                    {FRIENDS.map((friend, index) => (
-                        <View key={friend.id} style={[
-                            styles.friendItem,
-                            index !== FRIENDS.length - 1 && styles.friendDivider
-                        ]}>
-                            <Image source={{ uri: friend.avatar }} style={styles.friendAvatar} />
-                            <View style={styles.friendInfo}>
-                                <Text style={styles.friendName}>{friend.name}</Text>
-                                <Text style={styles.friendSubtext}>{friend.impactCount} {friend.impactCount === 1 ? 'impact' : 'impacts'} completed</Text>
+                            <Image
+                                source={{ uri: profileImage }}
+                                style={styles.avatar}
+                            />
+                            <View style={styles.editAvatarBadge}>
+                                <Ionicons name="camera" size={16} color="#fff" />
                             </View>
-                            <TouchableOpacity style={styles.waveButton}>
-                                <Text style={styles.waveEmoji}>👋</Text>
+                        </TouchableOpacity>
+
+                        <Text style={styles.profileName}>Lotte Boonstra</Text>
+                        <Text style={styles.profileBio}>Making everyday impact counts. 🌍✨</Text>
+
+                        <View style={styles.quickStatsRow}>
+                            <View style={styles.quickStat}>
+                                <Text style={styles.quickStatValue}>{total}</Text>
+                                <Text style={styles.quickStatLabel}>{total === 1 ? 'Impact' : 'Impacts'}</Text>
+                            </View>
+                            <View style={styles.statsDivider} />
+                            <View style={styles.quickStat}>
+                                <Text style={styles.quickStatValue}>{streak}</Text>
+                                <Text style={styles.quickStatLabel}>Days Streak</Text>
+                            </View>
+                            <View style={styles.statsDivider} />
+                            <TouchableOpacity
+                                style={styles.quickStat}
+                                onPress={() => setIsLevelModalVisible(true)}
+                            >
+                                <Text style={[styles.quickStatValue, { color: currentLevelInfo.color }]}>Level {currentLevelInfo.level}</Text>
+                                <Text style={styles.quickStatLabel}>Impact Level</Text>
                             </TouchableOpacity>
                         </View>
-                    ))}
-                </View>
+                    </View>
 
-                {/* Account Details Section */}
-                <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>Account Details</Text>
-                </View>
-                <View style={styles.detailsCard}>
-                    <View style={[styles.detailItem, styles.friendDivider]}>
-                        <Ionicons name="mail-outline" size={20} color="#8E8E93" style={styles.detailIcon} />
-                        <View>
-                            <Text style={styles.detailLabel}>Email</Text>
-                            <Text style={styles.detailValue}>lotte@dailyimpact.com</Text>
+                    {/* Habit Calendar Section */}
+                    <View style={styles.sectionHeader}>
+                        <Text style={styles.sectionTitle}>Impact Calendar</Text>
+                    </View>
+                    {renderCalendar()}
+                    <View style={{ height: 32 }} />
+
+                    {/* Friends Section */}
+                    <View style={styles.sectionHeader}>
+                        <Text style={styles.sectionTitle}>Friends</Text>
+                        <TouchableOpacity>
+                            <Text style={styles.seeAllText}>Add Friend</Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    <View style={styles.friendsCard}>
+                        {FRIENDS.map((friend, index) => (
+                            <View key={friend.id} style={[
+                                styles.friendItem,
+                                index !== FRIENDS.length - 1 && styles.friendDivider
+                            ]}>
+                                <Image source={{ uri: friend.avatar }} style={styles.friendAvatar} />
+                                <View style={styles.friendInfo}>
+                                    <Text style={styles.friendName}>{friend.name}</Text>
+                                    <Text style={styles.friendSubtext}>{friend.impactCount} {friend.impactCount === 1 ? 'impact' : 'impacts'} completed</Text>
+                                </View>
+                                <TouchableOpacity style={styles.waveButton}>
+                                    <Text style={styles.waveEmoji}>👋</Text>
+                                </TouchableOpacity>
+                            </View>
+                        ))}
+                    </View>
+
+                    {/* Account Details Section */}
+                    <View style={styles.sectionHeader}>
+                        <Text style={styles.sectionTitle}>Account Details</Text>
+                    </View>
+                    <View style={styles.detailsCard}>
+                        <View style={[styles.detailItem, styles.friendDivider]}>
+                            <Ionicons name="mail-outline" size={20} color="#8E8E93" style={styles.detailIcon} />
+                            <View>
+                                <Text style={styles.detailLabel}>Email</Text>
+                                <Text style={styles.detailValue}>lotte@dailyimpact.com</Text>
+                            </View>
+                        </View>
+                        <View style={styles.detailItem}>
+                            <Ionicons name="calendar-outline" size={20} color="#8E8E93" style={styles.detailIcon} />
+                            <View>
+                                <Text style={styles.detailLabel}>Joined</Text>
+                                <Text style={styles.detailValue}>January 24, 2026</Text>
+                            </View>
                         </View>
                     </View>
-                    <View style={styles.detailItem}>
-                        <Ionicons name="calendar-outline" size={20} color="#8E8E93" style={styles.detailIcon} />
-                        <View>
-                            <Text style={styles.detailLabel}>Joined</Text>
-                            <Text style={styles.detailValue}>January 24, 2026</Text>
-                        </View>
-                    </View>
-                </View>
 
-                <TouchableOpacity style={styles.logoutButton}>
-                    <Text style={styles.logoutText}>Log Out</Text>
-                </TouchableOpacity>
+                    <TouchableOpacity style={styles.logoutButton}>
+                        <Text style={styles.logoutText}>Log Out</Text>
+                    </TouchableOpacity>
+                </View>
 
                 {/* Footer Tag */}
                 <View style={styles.infoBox}>
@@ -353,6 +355,7 @@ const styles = StyleSheet.create({
     scrollContent: {
         padding: 20,
         paddingBottom: 40,
+        flexGrow: 1,
     },
     profileBriefCard: {
         backgroundColor: '#fff',
