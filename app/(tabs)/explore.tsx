@@ -1,7 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import React, { useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Animated, Dimensions, Modal, PanResponder, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 const SDGS = [
   { id: 1, title: 'No Poverty', color: '#E5243B', description: 'End poverty in all its forms everywhere.', icon: require('@/assets/images/sdgs/sdg1.png'), targets: 7, publications: 51, actions: 1562 },
@@ -25,12 +27,83 @@ const SDGS = [
 
 export default function HomeScreen() {
   const [selectedSdg, setSelectedSdg] = useState<typeof SDGS[0] | null>(null);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
+
+  const handleOpen = (sdg: typeof SDGS[0]) => {
+    setSelectedSdg(sdg);
+    setIsModalVisible(true);
+    // Animation starts after state updates in useEffect
+  };
+
+  useEffect(() => {
+    if (isModalVisible && selectedSdg) {
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.spring(slideAnim, {
+          toValue: 0,
+          tension: 50,
+          friction: 8,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  }, [isModalVisible, selectedSdg]);
+
+  const handleClose = () => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: SCREEN_HEIGHT,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setIsModalVisible(false);
+      setSelectedSdg(null);
+    });
+  };
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        return gestureState.dy > 10;
+      },
+      onPanResponderMove: (_, gestureState) => {
+        if (gestureState.dy > 0) {
+          slideAnim.setValue(gestureState.dy);
+        }
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        if (gestureState.dy > 150 || gestureState.vy > 0.5) {
+          handleClose();
+        } else {
+          Animated.spring(slideAnim, {
+            toValue: 0,
+            tension: 50,
+            friction: 8,
+            useNativeDriver: true,
+          }).start();
+        }
+      },
+    })
+  ).current;
 
   const renderSdgTile = (sdg: typeof SDGS[0]) => (
     <TouchableOpacity
       key={sdg.id}
       style={[styles.tile, { backgroundColor: sdg.color }]}
-      onPress={() => setSelectedSdg(sdg)}
+      onPress={() => handleOpen(sdg)}
       activeOpacity={0.8}
     >
       {sdg.icon ? (
@@ -69,19 +142,34 @@ export default function HomeScreen() {
 
       {/* Modal Detail View */}
       <Modal
-        visible={!!selectedSdg}
+        visible={isModalVisible}
         transparent
-        animationType="slide"
-        onRequestClose={() => setSelectedSdg(null)}
+        onRequestClose={handleClose}
       >
-        <View style={styles.modalOverlay}>
-          <Pressable style={styles.modalDismiss} onPress={() => setSelectedSdg(null)} />
-          <View style={[styles.modalContent, selectedSdg ? { backgroundColor: selectedSdg.color } : null]}>
+        <View style={styles.modalOverlayContainer}>
+          <Animated.View
+            style={[
+              styles.modalOverlay,
+              { opacity: fadeAnim }
+            ]}
+          >
+            <Pressable style={styles.modalDismiss} onPress={handleClose} />
+          </Animated.View>
+
+          <Animated.View
+            style={[
+              styles.modalContent,
+              selectedSdg ? { backgroundColor: selectedSdg.color } : null,
+              { transform: [{ translateY: slideAnim }] }
+            ]}
+            {...panResponder.panHandlers}
+          >
             {selectedSdg && (
               <View style={styles.detailHero}>
+                <View style={styles.swipeIndicator} />
                 <TouchableOpacity
                   style={styles.closeButton}
-                  onPress={() => setSelectedSdg(null)}
+                  onPress={handleClose}
                 >
                   <Ionicons name="close-circle" size={32} color="rgba(255,255,255,0.8)" />
                 </TouchableOpacity>
@@ -97,7 +185,7 @@ export default function HomeScreen() {
                 </Text>
               </View>
             )}
-          </View>
+          </Animated.View>
         </View>
       </Modal>
     </View>
@@ -167,19 +255,32 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 4,
   },
-  modalOverlay: {
+  modalOverlayContainer: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'flex-end',
+  },
+  modalOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.6)',
   },
   modalDismiss: {
     flex: 1,
   },
   modalContent: {
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
     height: '85%',
     overflow: 'hidden',
+    backgroundColor: '#fff', // fallback
+  },
+  swipeIndicator: {
+    width: 40,
+    height: 5,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    borderRadius: 3,
+    alignSelf: 'center',
+    marginTop: 10,
+    marginBottom: 5,
   },
   detailHero: {
     padding: 30,
