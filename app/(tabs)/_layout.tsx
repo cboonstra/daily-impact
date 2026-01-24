@@ -5,9 +5,11 @@ import React from 'react';
 import { HapticTab } from '@/components/haptic-tab';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useDailyImpact } from '@/hooks/useDailyImpact';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const { isDone } = useDailyImpact();
 
   return (
     <Tabs
@@ -27,7 +29,7 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Daily Impact',
-          tabBarIcon: ({ color }) => <Ionicons size={24} name="ellipse-outline" color={color} />,
+          tabBarIcon: ({ color }) => <Ionicons size={24} name={isDone ? "ellipse" : "ellipse-outline"} color={color} />,
         }}
       />
       <Tabs.Screen
