@@ -189,7 +189,7 @@ export default function HomeScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={{ flex: 1 }}>
           <View style={styles.grid}>
-            {SDGS.map(renderSdgTile)}
+            {SDGS.map((sdg, index) => renderSdgTile(sdg, index))}
           </View>
         </View>
 
@@ -284,9 +284,13 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
     gap: 12,
   },
-  tile: {
+  tileContainer: {
     width: '31%', // Three items per row with gap
     aspectRatio: 1,
+  },
+  tile: {
+    width: '100%',
+    height: '100%',
     borderRadius: 12,
     overflow: 'hidden',
     justifyContent: 'center',

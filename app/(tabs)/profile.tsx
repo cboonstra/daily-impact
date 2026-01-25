@@ -4,8 +4,8 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import { useFocusEffect } from 'expo-router';
-import React, { useCallback, useEffect, useState } from 'react';
-import { Alert, Dimensions, Image, Modal, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Alert, Animated, Dimensions, Image, Modal, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 const FRIENDS = [
     { id: '1', name: 'Alex Rivers', impactCount: 42, avatar: 'https://i.pravatar.cc/150?u=alex' },
@@ -42,9 +42,29 @@ export default function ProfileScreen() {
 
     const currentLevelInfo = [...LEVEL_SYSTEM].reverse().find(l => total >= l.impacts) || LEVEL_SYSTEM[0];
 
+    // Animations
+    const fadeAnims = useRef([
+        new Animated.Value(0), // Profile Brief
+        new Animated.Value(0), // Stats
+        new Animated.Value(0), // Calendar
+        new Animated.Value(0), // Friends
+        new Animated.Value(0), // Details
+    ]).current;
+
     useFocusEffect(
         useCallback(() => {
             refreshHistory();
+
+            // Trigger staggered entry
+            Animated.stagger(100,
+                fadeAnims.map(anim =>
+                    Animated.timing(anim, {
+                        toValue: 1,
+                        duration: 600,
+                        useNativeDriver: true,
+                    })
+                )
+            ).start();
         }, [])
     );
 
@@ -205,7 +225,18 @@ export default function ProfileScreen() {
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 <View style={{ flex: 1 }}>
                     {/* Profile Brief */}
-                    <View style={styles.profileBriefCard}>
+                    <Animated.View style={[
+                        styles.profileBriefCard,
+                        {
+                            opacity: fadeAnims[0],
+                            transform: [{
+                                translateY: fadeAnims[0].interpolate({
+                                    inputRange: [0, 1],
+                                    outputRange: [20, 0],
+                                })
+                            }]
+                        }
+                    ]}>
                         <TouchableOpacity
                             onPress={pickImage}
                             activeOpacity={0.8}
@@ -223,7 +254,18 @@ export default function ProfileScreen() {
                         <Text style={styles.profileName}>{profile.name}</Text>
                         <Text style={styles.profileBio}>{profile.bio}</Text>
 
-                        <View style={styles.quickStatsRow}>
+                        <Animated.View style={[
+                            styles.quickStatsRow,
+                            {
+                                opacity: fadeAnims[1],
+                                transform: [{
+                                    scale: fadeAnims[1].interpolate({
+                                        inputRange: [0, 1],
+                                        outputRange: [0.95, 1],
+                                    })
+                                }]
+                            }
+                        ]}>
                             <View style={styles.quickStat}>
                                 <Text style={styles.quickStatValue}>{total}</Text>
                                 <Text style={styles.quickStatLabel}>{total === 1 ? 'Impact' : 'Impacts'}</Text>
@@ -241,62 +283,93 @@ export default function ProfileScreen() {
                                 <Text style={[styles.quickStatValue, { color: currentLevelInfo.color }]}>Level {currentLevelInfo.level}</Text>
                                 <Text style={styles.quickStatLabel}>Impact Level</Text>
                             </TouchableOpacity>
-                        </View>
-                    </View>
+                        </Animated.View>
+                    </Animated.View>
 
                     {/* Habit Calendar Section */}
-                    <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionTitle}>Impact Calendar</Text>
-                    </View>
-                    {renderCalendar()}
+                    <Animated.View style={{
+                        opacity: fadeAnims[2],
+                        transform: [{
+                            translateY: fadeAnims[2].interpolate({
+                                inputRange: [0, 1],
+                                outputRange: [20, 0],
+                            })
+                        }]
+                    }}>
+                        <View style={styles.sectionHeader}>
+                            <Text style={styles.sectionTitle}>Impact Calendar</Text>
+                        </View>
+                        {renderCalendar()}
+                    </Animated.View>
+
                     <View style={{ height: 32 }} />
 
                     {/* Friends Section */}
-                    <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionTitle}>Friends</Text>
-                        <TouchableOpacity onPress={handleInviteFriend}>
-                            <Text style={styles.seeAllText}>Add Friend</Text>
-                        </TouchableOpacity>
-                    </View>
+                    <Animated.View style={{
+                        opacity: fadeAnims[3],
+                        transform: [{
+                            translateY: fadeAnims[3].interpolate({
+                                inputRange: [0, 1],
+                                outputRange: [20, 0],
+                            })
+                        }]
+                    }}>
+                        <View style={styles.sectionHeader}>
+                            <Text style={styles.sectionTitle}>Friends</Text>
+                            <TouchableOpacity onPress={handleInviteFriend}>
+                                <Text style={styles.seeAllText}>Add Friend</Text>
+                            </TouchableOpacity>
+                        </View>
 
-                    <View style={styles.friendsCard}>
-                        {FRIENDS.map((friend, index) => (
-                            <View key={friend.id} style={[
-                                styles.friendItem,
-                                index !== FRIENDS.length - 1 && styles.friendDivider
-                            ]}>
-                                <Image source={{ uri: friend.avatar }} style={styles.friendAvatar} />
-                                <View style={styles.friendInfo}>
-                                    <Text style={styles.friendName}>{friend.name}</Text>
-                                    <Text style={styles.friendSubtext}>{friend.impactCount} {friend.impactCount === 1 ? 'impact' : 'impacts'} completed</Text>
+                        <View style={styles.friendsCard}>
+                            {FRIENDS.map((friend, index) => (
+                                <View key={friend.id} style={[
+                                    styles.friendItem,
+                                    index !== FRIENDS.length - 1 && styles.friendDivider
+                                ]}>
+                                    <Image source={{ uri: friend.avatar }} style={styles.friendAvatar} />
+                                    <View style={styles.friendInfo}>
+                                        <Text style={styles.friendName}>{friend.name}</Text>
+                                        <Text style={styles.friendSubtext}>{friend.impactCount} {friend.impactCount === 1 ? 'impact' : 'impacts'} completed</Text>
+                                    </View>
+                                    <TouchableOpacity style={styles.waveButton}>
+                                        <Text style={styles.waveEmoji}>👋</Text>
+                                    </TouchableOpacity>
                                 </View>
-                                <TouchableOpacity style={styles.waveButton}>
-                                    <Text style={styles.waveEmoji}>👋</Text>
-                                </TouchableOpacity>
-                            </View>
-                        ))}
-                    </View>
+                            ))}
+                        </View>
+                    </Animated.View>
 
                     {/* Account Details Section */}
-                    <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionTitle}>Account Details</Text>
-                    </View>
-                    <View style={styles.detailsCard}>
-                        <View style={[styles.detailItem, styles.friendDivider]}>
-                            <Ionicons name="mail-outline" size={20} color="#8E8E93" style={styles.detailIcon} />
-                            <View>
-                                <Text style={styles.detailLabel}>Email</Text>
-                                <Text style={styles.detailValue}>{profile.email}</Text>
+                    <Animated.View style={{
+                        opacity: fadeAnims[4],
+                        transform: [{
+                            translateY: fadeAnims[4].interpolate({
+                                inputRange: [0, 1],
+                                outputRange: [20, 0],
+                            })
+                        }]
+                    }}>
+                        <View style={styles.sectionHeader}>
+                            <Text style={styles.sectionTitle}>Account Details</Text>
+                        </View>
+                        <View style={styles.detailsCard}>
+                            <View style={[styles.detailItem, styles.friendDivider]}>
+                                <Ionicons name="mail-outline" size={20} color="#8E8E93" style={styles.detailIcon} />
+                                <View>
+                                    <Text style={styles.detailLabel}>Email</Text>
+                                    <Text style={styles.detailValue}>{profile.email}</Text>
+                                </View>
+                            </View>
+                            <View style={styles.detailItem}>
+                                <Ionicons name="calendar-outline" size={20} color="#8E8E93" style={styles.detailIcon} />
+                                <View>
+                                    <Text style={styles.detailLabel}>Joined</Text>
+                                    <Text style={styles.detailValue}>January 24, 2026</Text>
+                                </View>
                             </View>
                         </View>
-                        <View style={styles.detailItem}>
-                            <Ionicons name="calendar-outline" size={20} color="#8E8E93" style={styles.detailIcon} />
-                            <View>
-                                <Text style={styles.detailLabel}>Joined</Text>
-                                <Text style={styles.detailValue}>January 24, 2026</Text>
-                            </View>
-                        </View>
-                    </View>
+                    </Animated.View>
 
                     <TouchableOpacity style={styles.logoutButton}>
                         <Text style={styles.logoutText}>Log Out</Text>
