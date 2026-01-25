@@ -1,4 +1,7 @@
+import { SDG_ACTIONS } from '@/constants/sdgActions';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Dimensions, Modal, PanResponder, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -26,15 +29,17 @@ const SDGS = [
 ];
 
 export default function HomeScreen() {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
   const [selectedSdg, setSelectedSdg] = useState<typeof SDGS[0] | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
 
-  const handleOpen = (sdg: typeof SDGS[0]) => {
+  const handleOpen = async (sdg: typeof SDGS[0]) => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setSelectedSdg(sdg);
     setIsModalVisible(true);
-    // Animation starts after state updates in useEffect
   };
 
   useEffect(() => {
@@ -55,7 +60,8 @@ export default function HomeScreen() {
     }
   }, [isModalVisible, selectedSdg]);
 
-  const handleClose = () => {
+  const handleClose = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 0,
@@ -180,10 +186,10 @@ export default function HomeScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, isDark && styles.containerDark]}>
       {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>SDGs</Text>
+      <View style={[styles.header, isDark && styles.headerDark]}>
+        <Text style={[styles.headerTitle, isDark && styles.headerTitleDark]}>SDGs</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -194,9 +200,9 @@ export default function HomeScreen() {
         </View>
 
         {/* Footer Tag */}
-        <View style={styles.infoBox}>
+        <View style={[styles.infoBox, isDark && styles.infoBoxDark]}>
           <Ionicons name="sparkles-outline" size={20} color="#FFB300" />
-          <Text style={styles.infoText}>
+          <Text style={[styles.infoText, isDark && styles.infoTextDark]}>
             Consistent actions create the biggest impact. Keep it up!
           </Text>
         </View>
@@ -221,14 +227,17 @@ export default function HomeScreen() {
           <Animated.View
             style={[
               styles.modalContent,
-              selectedSdg ? { backgroundColor: selectedSdg.color } : null,
+              isDark && styles.modalContentDark,
               { transform: [{ translateY: slideAnim }] }
             ]}
             {...panResponder.panHandlers}
           >
             {selectedSdg && (
-              <View style={styles.detailHero}>
+              <View style={styles.modalInner}>
+                <View style={[styles.modalBackground, { backgroundColor: selectedSdg.color }]} />
+
                 <View style={styles.swipeIndicator} />
+
                 <TouchableOpacity
                   style={styles.closeButton}
                   onPress={handleClose}
@@ -236,15 +245,72 @@ export default function HomeScreen() {
                   <Ionicons name="close-circle" size={32} color="rgba(255,255,255,0.8)" />
                 </TouchableOpacity>
 
-                <View style={styles.detailHeaderInfo}>
-                  <Text style={styles.detailNumber}>{selectedSdg.id}</Text>
-                  <Text style={styles.detailTitleSmall}>SDG</Text>
-                </View>
+                <ScrollView
+                  showsVerticalScrollIndicator={false}
+                  contentContainerStyle={styles.modalScrollContent}
+                >
+                  <View style={styles.detailHero}>
+                    <View style={styles.detailHeaderInfo}>
+                      <Text style={styles.detailNumber}>{selectedSdg.id}</Text>
+                      <View>
+                        <Text style={styles.detailTitleSmall}>SUSTAINABLE DEVELOPMENT</Text>
+                        <Text style={styles.detailTitleLarge}>GOAL</Text>
+                      </View>
+                    </View>
 
-                <Text style={styles.detailTitleLarge}>{selectedSdg.title}</Text>
-                <Text style={styles.detailDescriptionWhite}>
-                  {selectedSdg.description}
-                </Text>
+                    <Text style={styles.sdgMainTitle}>{selectedSdg.title}</Text>
+                    <Text style={styles.detailDescriptionWhite}>
+                      {selectedSdg.description}
+                    </Text>
+
+                    <View style={styles.statsRow}>
+                      <View style={styles.statItem}>
+                        <Text style={styles.statValue}>{selectedSdg.targets}</Text>
+                        <Text style={styles.statLabel}>Targets</Text>
+                      </View>
+                      <View style={styles.statDivider} />
+                      <View style={styles.statItem}>
+                        <Text style={styles.statValue}>{selectedSdg.publications}</Text>
+                        <Text style={styles.statLabel}>Pubs</Text>
+                      </View>
+                      <View style={styles.statDivider} />
+                      <View style={styles.statItem}>
+                        <Text style={styles.statValue}>{selectedSdg.actions}</Text>
+                        <Text style={styles.statLabel}>Actions</Text>
+                      </View>
+                    </View>
+                  </View>
+
+                  <View style={[styles.actionsSection, isDark && styles.actionsSectionDark]}>
+                    <Text style={[styles.actionsHeader, isDark && styles.textDark]}>What you can do</Text>
+                    {SDG_ACTIONS.filter(a => a.sdgId === selectedSdg.id).map((action, index) => (
+                      <Animated.View
+                        key={action.id}
+                        style={[
+                          styles.actionCard,
+                          isDark && styles.actionCardDark,
+                          {
+                            opacity: fadeAnim,
+                            transform: [{
+                              translateY: fadeAnim.interpolate({
+                                inputRange: [0, 1],
+                                outputRange: [20 + (index * 10), 0],
+                              })
+                            }]
+                          }
+                        ]}
+                      >
+                        <View style={[styles.actionIconContainer, isDark && styles.actionIconContainerDark]}>
+                          <Ionicons name="flash" size={20} color={selectedSdg.color} />
+                        </View>
+                        <View style={styles.actionContent}>
+                          <Text style={[styles.actionTitle, isDark && styles.textDark]}>{action.action}</Text>
+                          <Text style={[styles.actionExplanation, isDark && styles.infoTextDark]}>{action.explanation}</Text>
+                        </View>
+                      </Animated.View>
+                    ))}
+                  </View>
+                </ScrollView>
               </View>
             )}
           </Animated.View>
@@ -259,6 +325,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
+  containerDark: {
+    backgroundColor: '#121212',
+  },
   header: {
     paddingTop: 60,
     paddingBottom: 15,
@@ -268,10 +337,17 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
   },
+  headerDark: {
+    backgroundColor: '#1E1E1E',
+    borderBottomColor: '#2C2C2E',
+  },
   headerTitle: {
     fontSize: 22,
     fontWeight: '700',
     color: '#333',
+  },
+  headerTitleDark: {
+    color: '#fff',
   },
   scrollContent: {
     padding: 16,
@@ -333,11 +409,28 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   modalContent: {
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    height: '85%',
+    borderTopLeftRadius: 40,
+    borderTopRightRadius: 40,
+    height: '90%',
     overflow: 'hidden',
-    backgroundColor: '#fff', // fallback
+    backgroundColor: '#fff',
+  },
+  modalContentDark: {
+    backgroundColor: '#1E1E1E',
+  },
+  modalInner: {
+    flex: 1,
+  },
+  modalBackground: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 400,
+    opacity: 1,
+  },
+  modalScrollContent: {
+    paddingBottom: 40,
   },
   swipeIndicator: {
     width: 40,
@@ -345,39 +438,50 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.3)',
     borderRadius: 3,
     alignSelf: 'center',
-    marginTop: 10,
-    marginBottom: 5,
+    marginTop: 12,
+    position: 'absolute',
+    top: 0,
+    zIndex: 10,
   },
   detailHero: {
-    padding: 30,
-    paddingTop: 20,
-    flex: 1,
+    padding: 24,
+    paddingTop: 60,
   },
   closeButton: {
-    alignSelf: 'flex-end',
-    marginBottom: 10,
+    position: 'absolute',
+    top: 20,
+    right: 20,
+    zIndex: 10,
   },
   detailHeaderInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    marginBottom: 20,
+    gap: 15,
+    marginBottom: 10,
   },
   detailNumber: {
-    fontSize: 48,
-    fontWeight: '800',
-    color: '#fff',
+    fontSize: 72,
+    fontWeight: '900',
+    color: 'rgba(255,255,255,0.5)',
+    lineHeight: 72,
   },
   detailTitleSmall: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#fff',
-    flexShrink: 1,
+    fontSize: 12,
+    fontWeight: '800',
+    color: 'rgba(255,255,255,0.8)',
+    letterSpacing: 2,
   },
   detailTitleLarge: {
-    fontSize: 32,
-    fontWeight: '800',
+    fontSize: 40,
+    fontWeight: '900',
     color: '#fff',
+    lineHeight: 40,
+  },
+  sdgMainTitle: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#fff',
+    marginTop: 10,
     marginBottom: 15,
   },
   detailDescriptionWhite: {
@@ -385,24 +489,129 @@ const styles = StyleSheet.create({
     color: '#fff',
     opacity: 0.9,
     lineHeight: 24,
-    marginBottom: 25,
+    marginBottom: 30,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderRadius: 20,
+    padding: 20,
+    marginTop: 10,
+  },
+  statItem: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  statValue: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#fff',
+  },
+  statLabel: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.7)',
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  statDivider: {
+    width: 1,
+    height: 30,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+  },
+  actionsSection: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    marginTop: -20,
+    padding: 24,
+    minHeight: 400,
+  },
+  actionsSectionDark: {
+    backgroundColor: '#1E1E1E',
+  },
+  actionsHeader: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#1C1C1E',
+    marginBottom: 20,
+  },
+  textDark: {
+    color: '#F2F2F7',
+  },
+  actionCard: {
+    flexDirection: 'row',
+    backgroundColor: '#F8F9FA',
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 16,
+    alignItems: 'flex-start',
+    borderWidth: 1,
+    borderColor: '#F1F3F5',
+  },
+  actionCardDark: {
+    backgroundColor: '#2C2C2E',
+    borderColor: '#3A3A3C',
+  },
+  actionIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    elevation: 2,
+  },
+  actionIconContainerDark: {
+    backgroundColor: '#1C1C1E',
+  },
+  actionContent: {
+    flex: 1,
+  },
+  actionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1C1C1E',
+    marginBottom: 4,
+  },
+  actionExplanation: {
+    fontSize: 14,
+    color: '#636E72',
+    lineHeight: 20,
   },
   infoBox: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: 20,
+    padding: 20,
     marginTop: 32,
     marginBottom: 10,
     gap: 12,
     borderWidth: 1,
     borderColor: '#f0f0f0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+  },
+  infoBoxDark: {
+    backgroundColor: '#1E1E1E',
+    borderColor: '#2C2C2E',
   },
   infoText: {
     flex: 1,
     fontSize: 14,
     color: '#8E8E93',
     lineHeight: 20,
+  },
+  infoTextDark: {
+    color: '#AEA9A6',
   },
 });

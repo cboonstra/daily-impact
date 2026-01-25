@@ -1,6 +1,11 @@
+import { LEVEL_SYSTEM } from '@/constants/levels';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useDailyImpact } from '@/hooks/useDailyImpact';
+import { useImpactHistory } from '@/hooks/useImpactHistory';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useFocusEffect } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Animated, Easing, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -9,13 +14,24 @@ import { captureRef } from 'react-native-view-shot';
 const AnimatedGradient = Animated.createAnimatedComponent(LinearGradient);
 
 export default function DailyHabitScreen() {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
   const { action, isDone, shufflesRemaining, isLoading, shuffle, markDone, unmarkDone } = useDailyImpact();
+  const { history, getStats, refreshHistory } = useImpactHistory();
+  const { total, streak } = getStats();
   const cardRef = useRef<View>(null);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      refreshHistory();
+    }, [])
+  );
 
   // Animations
   const popAnim = useRef(new Animated.Value(0)).current;
   const burstAnim = useRef(new Animated.Value(0)).current;
   const colorAnim = useRef(new Animated.Value(0)).current;
+  const streakPulse = useRef(new Animated.Value(1)).current;
   const [showParticles, setShowParticles] = useState(false);
   const [prevColor, setPrevColor] = useState(action?.color || '#3F7E44');
 
@@ -29,7 +45,7 @@ export default function DailyHabitScreen() {
       Animated.timing(colorAnim, {
         toValue: 1,
         duration: 800,
-        useNativeDriver: false, // Opacity needs to be true, but we are using colorAnim for layer fading
+        useNativeDriver: false,
       }).start(() => {
         setPrevColor(action.color);
       });
@@ -37,11 +53,34 @@ export default function DailyHabitScreen() {
   }, [action?.color]);
 
   useEffect(() => {
+    if (streak > 0) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(streakPulse, {
+            toValue: 1.2,
+            duration: 1000,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+          Animated.timing(streakPulse, {
+            toValue: 1,
+            duration: 1000,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    }
+  }, [streak]);
+
+  useEffect(() => {
     if (isDone) {
       // Trigger happy animation
       setShowParticles(true);
       popAnim.setValue(0);
       burstAnim.setValue(0);
+
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
       Animated.parallel([
         Animated.spring(popAnim, {
@@ -88,15 +127,16 @@ export default function DailyHabitScreen() {
   const renderParticles = () => {
     if (!showParticles) return null;
 
-    const particles = ['✨', '🌱', '❤️', '🌟', '🍃', '🔥', '🌍', '🌎', '🌏', '🦋', '🌸', '🌈'];
+    const particles = ['✨', '🌱', '❤️', '🌟', '🍃', '🔥', '🌍', '🌎', '🌏', '🦋', '🌸', '🌈', '🌱', '✨', '🌟', '❤️'];
     return particles.map((p, i) => {
       const angle = (i / particles.length) * Math.PI * 2;
-      const x = Math.cos(angle) * 200;
-      const y = Math.sin(angle) * 200;
+      const velocity = 150 + Math.random() * 100;
+      const x = Math.cos(angle) * velocity;
+      const y = Math.sin(angle) * velocity;
 
       const translateY = burstAnim.interpolate({
-        inputRange: [0, 1],
-        outputRange: [0, y - 60],
+        inputRange: [0, 0.5, 1],
+        outputRange: [0, y - 40, y + 20],
       });
 
       const translateX = burstAnim.interpolate({
@@ -106,17 +146,17 @@ export default function DailyHabitScreen() {
 
       const rotate = burstAnim.interpolate({
         inputRange: [0, 1],
-        outputRange: ['0deg', (i % 2 === 0 ? 360 : -360) + 'deg'],
+        outputRange: ['0deg', (i % 2 === 0 ? 720 : -720) + 'deg'],
       });
 
       const opacity = burstAnim.interpolate({
-        inputRange: [0, 0.1, 0.8, 1],
+        inputRange: [0, 0.1, 0.7, 1],
         outputRange: [0, 1, 1, 0],
       });
 
       const scale = burstAnim.interpolate({
-        inputRange: [0, 0.2, 1],
-        outputRange: [0.3, 1.8, 0.8],
+        inputRange: [0, 0.2, 0.8, 1],
+        outputRange: [0.3, 1.5, 1, 0.5],
       });
 
       return (
@@ -136,15 +176,104 @@ export default function DailyHabitScreen() {
     });
   };
 
+  const onShufflePress = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    shuffle();
+  };
+
+  const onMarkDonePress = async () => {
+    if (!isDone) {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+      markDone();
+    }
+  };
+
+  // Level & Progress logic
+  const currentLevelInfo = [...LEVEL_SYSTEM].reverse().find(l => total >= l.impacts) || LEVEL_SYSTEM[0];
+  const nextLevelInfo = LEVEL_SYSTEM.find(l => l.level === currentLevelInfo.level + 1);
+  const progress = nextLevelInfo
+    ? (total - currentLevelInfo.impacts) / (nextLevelInfo.impacts - currentLevelInfo.impacts)
+    : 1;
+
+  // Weekly logic
+  const last7Days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (6 - i));
+    const dateStr = d.toISOString().split('T')[0];
+    return {
+      day: d.toLocaleDateString('en-US', { weekday: 'narrow' }),
+      completed: !!history[dateStr],
+      isToday: i === 6
+    };
+  });
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, isDark && styles.containerDark]}>
       {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Your action for today</Text>
+      <View style={[styles.header, isDark && styles.headerDark]}>
+        <Text style={[styles.headerTitle, isDark && styles.headerTitleDark]}>Impact Dashboard</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <View style={styles.dashboardInfo}>
+          {/* Weekly Streak */}
+          <View style={[styles.weeklyContainer, isDark && styles.weeklyContainerDark]}>
+            <View style={styles.weeklyHeader}>
+              <Text style={[styles.weeklyTitle, isDark && styles.textDark]}>Weekly Progress</Text>
+              <View style={[styles.streakBadge, isDark && styles.streakBadgeDark]}>
+                <Animated.View style={{ transform: [{ scale: streakPulse }] }}>
+                  <Ionicons name="flame" size={14} color="#FF9500" />
+                </Animated.View>
+                <Text style={styles.streakBadgeText}>{streak} Day Streak</Text>
+              </View>
+            </View>
+            <View style={styles.weeklyRow}>
+              {last7Days.map((day, idx) => (
+                <View key={idx} style={styles.dayContainer}>
+                  <Text style={[styles.dayLabel, day.isToday && styles.todayLabel]}>{day.day}</Text>
+                  <View style={[
+                    styles.dayDot,
+                    isDark && styles.dayDotDark,
+                    day.completed && { backgroundColor: '#3F7E44' },
+                    day.isToday && !day.completed && styles.todayDot,
+                    day.isToday && !day.completed && isDark && { borderColor: '#56C02B' }
+                  ]}>
+                    {day.completed && <Ionicons name="checkmark" size={12} color="#fff" />}
+                  </View>
+                </View>
+              ))}
+            </View>
+          </View>
+
+          {/* Level Progress */}
+          <View style={[styles.levelContainer, isDark && styles.levelContainerDark]}>
+            <View style={styles.levelHeader}>
+              <View style={styles.levelInfo}>
+                <Text style={styles.levelLabel}>Level {currentLevelInfo.level}</Text>
+                <Text style={[styles.levelNameText, isDark && styles.textDark]}>{currentLevelInfo.name}</Text>
+              </View>
+              <Text style={styles.progressText}>
+                {nextLevelInfo ? `${total} / ${nextLevelInfo.impacts} impacts` : 'Max Level Reach!'}
+              </Text>
+            </View>
+            <View style={[styles.progressBarBg, isDark && styles.progressBarBgDark]}>
+              <Animated.View
+                style={[
+                  styles.progressBarFill,
+                  {
+                    width: `${progress * 100}%`,
+                    backgroundColor: currentLevelInfo.color
+                  }
+                ]}
+              />
+            </View>
+          </View>
+        </View>
+
         <View style={{ flex: 1 }}>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, isDark && styles.textDark]}>Your action for today</Text>
+          </View>
           <View style={styles.mainCardShadow}>
             {/* Previous Gradient (as base) */}
             <LinearGradient
@@ -169,7 +298,7 @@ export default function DailyHabitScreen() {
             <View style={styles.cardContent}>
               <TouchableOpacity
                 activeOpacity={0.95}
-                onPress={() => !isDone && markDone()}
+                onPress={onMarkDonePress}
                 style={StyleSheet.absoluteFill}
               />
 
@@ -179,7 +308,9 @@ export default function DailyHabitScreen() {
 
               <View style={styles.cardHeader}>
                 <View style={styles.sdgBadge}>
-                  <Text style={styles.sdgText}>SDG {action.sdgId}: {action.sdgTitle}</Text>
+                  <Text style={styles.sdgText} numberOfLines={1} ellipsizeMode="tail">
+                    SDG {action.sdgId}: {action.sdgTitle}
+                  </Text>
                 </View>
 
                 <TouchableOpacity
@@ -209,7 +340,7 @@ export default function DailyHabitScreen() {
                     {shufflesRemaining > 0 && (
                       <TouchableOpacity
                         style={styles.minimalShuffle}
-                        onPress={shuffle}
+                        onPress={onShufflePress}
                         activeOpacity={0.6}
                       >
                         <Ionicons name="shuffle-outline" size={20} color="rgba(255,255,255,0.7)" />
@@ -249,9 +380,9 @@ export default function DailyHabitScreen() {
         </View>
 
         {/* Footer Tag */}
-        <View style={styles.infoBox}>
+        <View style={[styles.infoBox, isDark && styles.infoBoxDark]}>
           <Ionicons name="sparkles-outline" size={20} color="#FFB300" />
-          <Text style={styles.infoText}>
+          <Text style={[styles.infoText, isDark && styles.infoTextDark]}>
             Consistent actions create the biggest impact. Keep it up!
           </Text>
         </View>
@@ -304,6 +435,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8F9FA',
   },
+  containerDark: {
+    backgroundColor: '#121212',
+  },
   centered: {
     justifyContent: 'center',
     alignItems: 'center',
@@ -314,14 +448,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
-    backgroundColor: '#fff',
+  },
+  headerDark: {
+    backgroundColor: '#1E1E1E',
+    borderBottomColor: '#2C2C2E',
   },
   headerTitle: {
     fontSize: 22,
     fontWeight: '700',
     color: '#333',
+  },
+  headerTitleDark: {
+    color: '#fff',
   },
   scrollContent: {
     padding: 20,
@@ -330,24 +471,21 @@ const styles = StyleSheet.create({
   },
   mainCardShadow: {
     borderRadius: 32,
-    height: 560,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.15,
     shadowRadius: 20,
     elevation: 8,
-    overflow: 'visible',
+    backgroundColor: 'transparent',
   },
   mainCard: {
     borderRadius: 32,
-    padding: 32,
-    paddingTop: 24,
-    height: 560,
-    justifyContent: 'center',
+    overflow: 'hidden',
   },
   cardContent: {
-    flex: 1,
-    justifyContent: 'center',
+    padding: 32,
+    paddingTop: 24,
+    minHeight: 520,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -370,6 +508,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     alignSelf: 'flex-start',
+    flexShrink: 1,
+    marginRight: 12,
   },
   sdgText: {
     fontSize: 12,
@@ -441,6 +581,149 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.7)',
     fontWeight: '500',
   },
+  dashboardInfo: {
+    gap: 20,
+    marginBottom: 24,
+  },
+  weeklyContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 24,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  weeklyContainerDark: {
+    backgroundColor: '#1E1E1E',
+    shadowOpacity: 0.2,
+  },
+  weeklyHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  weeklyTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#333',
+  },
+  textDark: {
+    color: '#F2F2F7',
+  },
+  streakBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF9E5',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    gap: 4,
+  },
+  streakBadgeDark: {
+    backgroundColor: 'rgba(255, 149, 0, 0.15)',
+  },
+  streakBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#FF9500',
+  },
+  weeklyRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  dayContainer: {
+    alignItems: 'center',
+    gap: 8,
+  },
+  dayLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#8E8E93',
+  },
+  todayLabel: {
+    color: '#3F7E44',
+    fontWeight: '800',
+  },
+  dayDot: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F2F2F7',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  dayDotDark: {
+    backgroundColor: '#2C2C2E',
+  },
+  todayDot: {
+    borderWidth: 2,
+    borderColor: '#3F7E44',
+    backgroundColor: '#fff',
+  },
+  levelContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 24,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  levelContainerDark: {
+    backgroundColor: '#1E1E1E',
+  },
+  levelHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    marginBottom: 12,
+  },
+  levelInfo: {
+    gap: 2,
+  },
+  levelLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#8E8E93',
+    textTransform: 'uppercase',
+  },
+  levelNameText: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#333',
+  },
+  progressText: {
+    fontSize: 12,
+    color: '#8E8E93',
+    fontWeight: '600',
+  },
+  progressBarBg: {
+    height: 8,
+    backgroundColor: '#F2F2F7',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressBarBgDark: {
+    backgroundColor: '#2C2C2E',
+  },
+  progressBarFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  sectionHeader: {
+    marginBottom: 16,
+    marginTop: 8,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#333',
+  },
   footerNote: {
     textAlign: 'center',
     color: '#8E8E93',
@@ -494,11 +777,18 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#f0f0f0',
   },
+  infoBoxDark: {
+    backgroundColor: '#1E1E1E',
+    borderColor: '#2C2C2E',
+  },
   infoText: {
     flex: 1,
     fontSize: 14,
     color: '#8E8E93',
     lineHeight: 20,
+  },
+  infoTextDark: {
+    color: '#AEA9A6',
   },
   completionAnimationContainer: {
     alignItems: 'center',

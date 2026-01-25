@@ -1,11 +1,14 @@
+import { LEVEL_SYSTEM } from '@/constants/levels';
 import { useImpact } from '@/context/ImpactContext';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useImpactHistory } from '@/hooks/useImpactHistory';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import { useFocusEffect } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Animated, Dimensions, Image, Modal, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Animated, Dimensions, Image, Modal, Platform, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 const FRIENDS = [
     { id: '1', name: 'Alex Rivers', impactCount: 42, avatar: 'https://i.pravatar.cc/150?u=alex' },
@@ -17,16 +20,11 @@ const FRIENDS = [
 const PROFILE_IMAGE_KEY = 'user_profile_image';
 const DEFAULT_AVATAR = 'https://i.pravatar.cc/150?u=lotte';
 
-const LEVEL_SYSTEM = [
-    { level: 1, name: 'Newcomer', impacts: 0, icon: 'seedling-outline', color: '#81C784' },
-    { level: 2, name: 'Conscious', impacts: 5, icon: 'leaf-outline', color: '#66BB6A' },
-    { level: 3, name: 'Active', impacts: 15, icon: 'partly-sunny-outline', color: '#4CAF50' },
-    { level: 4, name: 'Impact Maker', impacts: 30, icon: 'earth-outline', color: '#43A047' },
-    { level: 5, name: 'Change Agent', impacts: 50, icon: 'flame-outline', color: '#388E3C' },
-    { level: 6, name: 'Sustainability Hero', impacts: 100, icon: 'trophy-outline', color: '#2E7D32' },
-];
+// LEVEL_SYSTEM moved to constants/levels.ts
 
 export default function ProfileScreen() {
+    const colorScheme = useColorScheme();
+    const isDark = colorScheme === 'dark';
     const { history, refreshHistory, getStats } = useImpactHistory();
     const { profile, updateProfile } = useImpact();
     const { total, streak } = getStats();
@@ -104,6 +102,7 @@ export default function ProfileScreen() {
     };
 
     const handleEditSave = async () => {
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         await updateProfile({
             name: editName,
             bio: editBio,
@@ -163,10 +162,13 @@ export default function ProfileScreen() {
                 <View key={d} style={styles.calendarDayContainer}>
                     <View style={[
                         styles.calendarDay,
-                        isToday && styles.dayToday
+                        isDark && styles.calendarDayDark,
+                        isToday && styles.dayToday,
+                        isToday && isDark && { borderColor: '#56C02B' }
                     ]}>
                         <Text style={[
                             styles.dayText,
+                            isDark && styles.textDark,
                             isToday && styles.dayTextToday
                         ]}>
                             {d}
@@ -178,22 +180,22 @@ export default function ProfileScreen() {
         }
 
         return (
-            <View style={styles.calendarCard}>
+            <View style={[styles.calendarCard, isDark && styles.cardDark]}>
                 <View style={styles.calendarHeader}>
                     <TouchableOpacity onPress={handlePrevMonth} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                        <Ionicons name="chevron-back" size={20} color="#333" />
+                        <Ionicons name="chevron-back" size={20} color={isDark ? '#fff' : '#333'} />
                     </TouchableOpacity>
 
-                    <Text style={styles.monthTitle}>{monthName} {viewYear}</Text>
+                    <Text style={[styles.monthTitle, isDark && styles.textDark]}>{monthName} {viewYear}</Text>
 
                     <TouchableOpacity onPress={handleNextMonth} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                        <Ionicons name="chevron-forward" size={20} color="#333" />
+                        <Ionicons name="chevron-forward" size={20} color={isDark ? '#fff' : '#333'} />
                     </TouchableOpacity>
                 </View>
 
                 <View style={styles.weekDays}>
                     {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, index) => (
-                        <Text key={`${day}-${index}`} style={styles.weekDayText}>{day}</Text>
+                        <Text key={`${day}-${index}`} style={[styles.weekDayText, isDark && styles.weekDayTextDark]}>{day}</Text>
                     ))}
                 </View>
 
@@ -205,20 +207,21 @@ export default function ProfileScreen() {
     };
 
     return (
-        <View style={styles.container}>
-            <View style={styles.header}>
+        <View style={[styles.container, isDark && styles.containerDark]}>
+            <View style={[styles.header, isDark && styles.headerDark]}>
                 <View style={{ width: 32 }} />
-                <Text style={styles.headerTitle}>Profile</Text>
+                <Text style={[styles.headerTitle, isDark && styles.headerTitleDark]}>Profile</Text>
                 <TouchableOpacity
                     style={styles.settingsButton}
-                    onPress={() => {
+                    onPress={async () => {
+                        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                         setEditName(profile.name);
                         setEditBio(profile.bio);
                         setEditEmail(profile.email);
                         setIsEditModalVisible(true);
                     }}
                 >
-                    <Ionicons name="settings-outline" size={24} color="#333" />
+                    <Ionicons name="settings-outline" size={24} color={isDark ? '#fff' : '#333'} />
                 </TouchableOpacity>
             </View>
 
@@ -227,6 +230,7 @@ export default function ProfileScreen() {
                     {/* Profile Brief */}
                     <Animated.View style={[
                         styles.profileBriefCard,
+                        isDark && styles.cardDark,
                         {
                             opacity: fadeAnims[0],
                             transform: [{
@@ -246,16 +250,17 @@ export default function ProfileScreen() {
                                 source={{ uri: profileImage }}
                                 style={styles.avatar}
                             />
-                            <View style={styles.editAvatarBadge}>
+                            <View style={[styles.editAvatarBadge, isDark && styles.editAvatarBadgeDark]}>
                                 <Ionicons name="camera" size={16} color="#fff" />
                             </View>
                         </TouchableOpacity>
 
-                        <Text style={styles.profileName}>{profile.name}</Text>
-                        <Text style={styles.profileBio}>{profile.bio}</Text>
+                        <Text style={[styles.profileName, isDark && styles.textDark]}>{profile.name}</Text>
+                        <Text style={[styles.profileBio, isDark && styles.profileBioDark]}>{profile.bio}</Text>
 
                         <Animated.View style={[
                             styles.quickStatsRow,
+                            isDark && styles.quickStatsRowDark,
                             {
                                 opacity: fadeAnims[1],
                                 transform: [{
@@ -267,18 +272,21 @@ export default function ProfileScreen() {
                             }
                         ]}>
                             <View style={styles.quickStat}>
-                                <Text style={styles.quickStatValue}>{total}</Text>
+                                <Text style={[styles.quickStatValue, isDark && styles.textDark]}>{total}</Text>
                                 <Text style={styles.quickStatLabel}>{total === 1 ? 'Impact' : 'Impacts'}</Text>
                             </View>
-                            <View style={styles.statsDivider} />
+                            <View style={[styles.statsDivider, isDark && styles.statsDividerDark]} />
                             <View style={styles.quickStat}>
-                                <Text style={styles.quickStatValue}>{streak}</Text>
+                                <Text style={[styles.quickStatValue, isDark && styles.textDark]}>{streak}</Text>
                                 <Text style={styles.quickStatLabel}>Days Streak</Text>
                             </View>
-                            <View style={styles.statsDivider} />
+                            <View style={[styles.statsDivider, isDark && styles.statsDividerDark]} />
                             <TouchableOpacity
                                 style={styles.quickStat}
-                                onPress={() => setIsLevelModalVisible(true)}
+                                onPress={async () => {
+                                    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                                    setIsLevelModalVisible(true);
+                                }}
                             >
                                 <Text style={[styles.quickStatValue, { color: currentLevelInfo.color }]}>Level {currentLevelInfo.level}</Text>
                                 <Text style={styles.quickStatLabel}>Impact Level</Text>
@@ -297,7 +305,7 @@ export default function ProfileScreen() {
                         }]
                     }}>
                         <View style={styles.sectionHeader}>
-                            <Text style={styles.sectionTitle}>Impact Calendar</Text>
+                            <Text style={[styles.sectionTitle, isDark && styles.textDark]}>Impact Calendar</Text>
                         </View>
                         {renderCalendar()}
                     </Animated.View>
@@ -315,24 +323,30 @@ export default function ProfileScreen() {
                         }]
                     }}>
                         <View style={styles.sectionHeader}>
-                            <Text style={styles.sectionTitle}>Friends</Text>
+                            <Text style={[styles.sectionTitle, isDark && styles.textDark]}>Friends</Text>
                             <TouchableOpacity onPress={handleInviteFriend}>
                                 <Text style={styles.seeAllText}>Add Friend</Text>
                             </TouchableOpacity>
                         </View>
 
-                        <View style={styles.friendsCard}>
+                        <View style={[styles.friendsCard, isDark && styles.cardDark]}>
                             {FRIENDS.map((friend, index) => (
                                 <View key={friend.id} style={[
                                     styles.friendItem,
-                                    index !== FRIENDS.length - 1 && styles.friendDivider
+                                    index !== FRIENDS.length - 1 && styles.friendDivider,
+                                    index !== FRIENDS.length - 1 && isDark && styles.friendDividerDark
                                 ]}>
                                     <Image source={{ uri: friend.avatar }} style={styles.friendAvatar} />
                                     <View style={styles.friendInfo}>
-                                        <Text style={styles.friendName}>{friend.name}</Text>
-                                        <Text style={styles.friendSubtext}>{friend.impactCount} {friend.impactCount === 1 ? 'impact' : 'impacts'} completed</Text>
+                                        <Text style={[styles.friendName, isDark && styles.textDark]}>{friend.name}</Text>
+                                        <Text style={[styles.friendSubtext, isDark && styles.profileBioDark]}>{friend.impactCount} {friend.impactCount === 1 ? 'impact' : 'impacts'} completed</Text>
                                     </View>
-                                    <TouchableOpacity style={styles.waveButton}>
+                                    <TouchableOpacity
+                                        style={[styles.waveButton, isDark && styles.waveButtonDark]}
+                                        onPress={async () => {
+                                            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                        }}
+                                    >
                                         <Text style={styles.waveEmoji}>👋</Text>
                                     </TouchableOpacity>
                                 </View>
@@ -351,21 +365,21 @@ export default function ProfileScreen() {
                         }]
                     }}>
                         <View style={styles.sectionHeader}>
-                            <Text style={styles.sectionTitle}>Account Details</Text>
+                            <Text style={[styles.sectionTitle, isDark && styles.textDark]}>Account Details</Text>
                         </View>
-                        <View style={styles.detailsCard}>
-                            <View style={[styles.detailItem, styles.friendDivider]}>
+                        <View style={[styles.detailsCard, isDark && styles.cardDark]}>
+                            <View style={[styles.detailItem, styles.friendDivider, isDark && styles.friendDividerDark]}>
                                 <Ionicons name="mail-outline" size={20} color="#8E8E93" style={styles.detailIcon} />
                                 <View>
                                     <Text style={styles.detailLabel}>Email</Text>
-                                    <Text style={styles.detailValue}>{profile.email}</Text>
+                                    <Text style={[styles.detailValue, isDark && styles.textDark]}>{profile.email}</Text>
                                 </View>
                             </View>
                             <View style={styles.detailItem}>
                                 <Ionicons name="calendar-outline" size={20} color="#8E8E93" style={styles.detailIcon} />
                                 <View>
                                     <Text style={styles.detailLabel}>Joined</Text>
-                                    <Text style={styles.detailValue}>January 24, 2026</Text>
+                                    <Text style={[styles.detailValue, isDark && styles.textDark]}>January 24, 2026</Text>
                                 </View>
                             </View>
                         </View>
@@ -377,9 +391,9 @@ export default function ProfileScreen() {
                 </View>
 
                 {/* Footer Tag */}
-                <View style={styles.infoBox}>
+                <View style={[styles.infoBox, isDark && styles.infoBoxDark]}>
                     <Ionicons name="sparkles-outline" size={20} color="#FFB300" />
-                    <Text style={styles.infoText}>
+                    <Text style={[styles.infoText, isDark && styles.infoTextDark]}>
                         Consistent actions create the biggest impact. Keep it up!
                     </Text>
                 </View>
@@ -398,14 +412,14 @@ export default function ProfileScreen() {
                     onPress={() => setIsLevelModalVisible(false)}
                 >
                     <View
-                        style={styles.modalContent}
+                        style={[styles.modalContent, isDark && styles.modalContentDark]}
                         onStartShouldSetResponder={() => true}
                     >
                         <View style={styles.modalHeader}>
                             <View style={[styles.modalIconContainer, { backgroundColor: currentLevelInfo.color + '20' }]}>
                                 <Ionicons name={currentLevelInfo.icon as any} size={32} color={currentLevelInfo.color} />
                             </View>
-                            <Text style={styles.modalTitle}>Impact Levels</Text>
+                            <Text style={[styles.modalTitle, isDark && styles.textDark]}>Impact Levels</Text>
                             <Text style={styles.modalSubtitle}>Current progress: {total} {total === 1 ? 'impact' : 'impacts'}</Text>
                         </View>
 
@@ -417,14 +431,16 @@ export default function ProfileScreen() {
                                 return (
                                     <View key={l.level} style={[
                                         styles.levelItem,
+                                        isDark && styles.levelItemDark,
                                         isReached && styles.levelItemReached,
+                                        isReached && isDark && styles.levelItemReachedDark,
                                         isCurrent && { borderColor: l.color, borderWidth: 2 }
                                     ]}>
-                                        <View style={[styles.levelIconBox, { backgroundColor: isReached ? l.color : '#F0F0F0' }]}>
-                                            <Ionicons name={l.icon as any} size={20} color={isReached ? '#fff' : '#8E8E93'} />
+                                        <View style={[styles.levelIconBox, { backgroundColor: isReached ? l.color : (isDark ? '#3A3A3C' : '#F0F0F0') }]}>
+                                            <Ionicons name={l.icon as any} size={20} color={isReached ? '#fff' : (isDark ? '#AEA9A6' : '#8E8E93')} />
                                         </View>
                                         <View style={styles.levelInfo}>
-                                            <Text style={[styles.levelName, isReached && { color: '#333' }]}>{l.name}</Text>
+                                            <Text style={[styles.levelName, isReached && { color: isDark ? '#fff' : '#333' }, !isReached && isDark && { color: '#AEA9A6' }]}>{l.name}</Text>
                                             <Text style={styles.levelRequirement}>{l.impacts} {l.impacts === 1 ? 'impact' : 'impacts'} required</Text>
                                         </View>
                                         {isReached && (
@@ -453,54 +469,57 @@ export default function ProfileScreen() {
                 onRequestClose={() => setIsEditModalVisible(false)}
             >
                 <View style={styles.modalOverlay}>
-                    <View style={styles.modalContent}>
+                    <View style={[styles.modalContent, isDark && styles.modalContentDark]}>
                         <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>Edit Profile</Text>
+                            <Text style={[styles.modalTitle, isDark && styles.textDark]}>Edit Profile</Text>
                             <Text style={styles.modalSubtitle}>Update your information</Text>
                         </View>
 
                         <ScrollView showsVerticalScrollIndicator={false}>
                             <View style={styles.inputGroup}>
-                                <Text style={styles.inputLabel}>Name</Text>
+                                <Text style={[styles.inputLabel, isDark && styles.textDark]}>Name</Text>
                                 <TextInput
-                                    style={styles.input}
+                                    style={[styles.input, isDark && styles.inputDark]}
                                     value={editName}
                                     onChangeText={setEditName}
                                     placeholder="Your Name"
+                                    placeholderTextColor={isDark ? '#666' : '#8E8E93'}
                                 />
                             </View>
 
                             <View style={styles.inputGroup}>
-                                <Text style={styles.inputLabel}>Bio</Text>
+                                <Text style={[styles.inputLabel, isDark && styles.textDark]}>Bio</Text>
                                 <TextInput
-                                    style={[styles.input, styles.textArea]}
+                                    style={[styles.input, styles.textArea, isDark && styles.inputDark]}
                                     value={editBio}
                                     onChangeText={setEditBio}
                                     placeholder="A little bit about you"
+                                    placeholderTextColor={isDark ? '#666' : '#8E8E93'}
                                     multiline
                                     numberOfLines={3}
                                 />
                             </View>
 
                             <View style={styles.inputGroup}>
-                                <Text style={styles.inputLabel}>Email</Text>
+                                <Text style={[styles.inputLabel, isDark && styles.textDark]}>Email</Text>
                                 <TextInput
-                                    style={styles.input}
+                                    style={[styles.input, isDark && styles.inputDark]}
                                     value={editEmail}
                                     onChangeText={setEditEmail}
                                     placeholder="Your Email"
+                                    placeholderTextColor={isDark ? '#666' : '#8E8E93'}
                                     keyboardType="email-address"
                                     autoCapitalize="none"
                                 />
                             </View>
                         </ScrollView>
 
-                        <View style={styles.modalFooter}>
+                        <View style={[styles.modalFooter, isDark && styles.modalFooterDark]}>
                             <TouchableOpacity
-                                style={[styles.modalButton, styles.cancelButton]}
+                                style={[styles.modalButton, styles.cancelButton, isDark && styles.cancelButtonDark]}
                                 onPress={() => setIsEditModalVisible(false)}
                             >
-                                <Text style={styles.cancelButtonText}>Cancel</Text>
+                                <Text style={[styles.cancelButtonText, isDark && styles.cancelButtonTextDark]}>Cancel</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
                                 style={[styles.modalButton, styles.saveButton]}
@@ -521,6 +540,9 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#F8F9FA',
     },
+    containerDark: {
+        backgroundColor: '#121212',
+    },
     header: {
         paddingTop: 60,
         paddingBottom: 15,
@@ -532,10 +554,17 @@ const styles = StyleSheet.create({
         borderBottomColor: '#f0f0f0',
         backgroundColor: '#fff',
     },
+    headerDark: {
+        backgroundColor: '#1E1E1E',
+        borderBottomColor: '#2C2C2E',
+    },
     headerTitle: {
         fontSize: 22,
         fontWeight: '700',
         color: '#333',
+    },
+    headerTitleDark: {
+        color: '#fff',
     },
     settingsButton: {
         padding: 4,
@@ -581,17 +610,26 @@ const styles = StyleSheet.create({
         borderWidth: 3,
         borderColor: '#fff',
     },
+    editAvatarBadgeDark: {
+        borderColor: '#1E1E1E',
+    },
     profileName: {
         fontSize: 24,
         fontWeight: '800',
         color: '#333',
         marginBottom: 4,
     },
+    textDark: {
+        color: '#F2F2F7',
+    },
     profileBio: {
         fontSize: 15,
         color: '#8E8E93',
         marginBottom: 24,
         textAlign: 'center',
+    },
+    profileBioDark: {
+        color: '#AEA9A6',
     },
     quickStatsRow: {
         flexDirection: 'row',
@@ -600,6 +638,9 @@ const styles = StyleSheet.create({
         paddingTop: 16,
         borderTopWidth: 1,
         borderTopColor: '#f5f5f5',
+    },
+    quickStatsRowDark: {
+        borderTopColor: '#2C2C2E',
     },
     quickStat: {
         flex: 1,
@@ -620,6 +661,9 @@ const styles = StyleSheet.create({
         height: '60%',
         backgroundColor: '#f0f0f0',
         alignSelf: 'center',
+    },
+    statsDividerDark: {
+        backgroundColor: '#2C2C2E',
     },
     sectionHeader: {
         flexDirection: 'row',
@@ -648,6 +692,18 @@ const styles = StyleSheet.create({
         elevation: 2,
         marginBottom: 32,
     },
+    cardDark: {
+        backgroundColor: '#1E1E1E',
+        shadowOpacity: 0.2,
+        ...Platform.select({
+            ios: {
+                shadowColor: '#000',
+            },
+            android: {
+                elevation: 5,
+            },
+        }),
+    },
     friendItem: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -656,6 +712,9 @@ const styles = StyleSheet.create({
     friendDivider: {
         borderBottomWidth: 1,
         borderBottomColor: '#f5f5f5',
+    },
+    friendDividerDark: {
+        borderBottomColor: '#2C2C2E',
     },
     friendAvatar: {
         width: 48,
@@ -684,6 +743,9 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
+    waveButtonDark: {
+        backgroundColor: '#3A3A3C',
+    },
     waveEmoji: {
         fontSize: 16,
     },
@@ -702,6 +764,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         paddingVertical: 12,
+        gap: 16,
     },
     detailIcon: {
         marginRight: 16,
@@ -746,6 +809,9 @@ const styles = StyleSheet.create({
         shadowRadius: 20,
         elevation: 5,
     },
+    modalContentDark: {
+        backgroundColor: '#1E1E1E',
+    },
     modalHeader: {
         alignItems: 'center',
         marginBottom: 24,
@@ -781,9 +847,16 @@ const styles = StyleSheet.create({
         borderWidth: 2,
         borderColor: 'transparent',
     },
+    levelItemDark: {
+        backgroundColor: '#2C2C2E',
+    },
     levelItemReached: {
         backgroundColor: '#fff',
         borderColor: '#f0f0f0',
+    },
+    levelItemReachedDark: {
+        backgroundColor: '#1E1E1E',
+        borderColor: '#2C2C2E',
     },
     levelIconBox: {
         width: 40,
@@ -804,7 +877,6 @@ const styles = StyleSheet.create({
     levelRequirement: {
         fontSize: 12,
         color: '#8E8E93',
-        marginTop: 2,
     },
     closeModalButton: {
         backgroundColor: '#3F7E44',
@@ -850,6 +922,9 @@ const styles = StyleSheet.create({
         width: 40,
         textAlign: 'center',
     },
+    weekDayTextDark: {
+        color: '#8E8E93',
+    },
     calendarGrid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
@@ -871,6 +946,9 @@ const styles = StyleSheet.create({
         borderRadius: 999,
         justifyContent: 'center',
         alignItems: 'center',
+    },
+    calendarDayDark: {
+        backgroundColor: '#2C2C2E',
     },
     dayToday: {
         borderWidth: 2,
@@ -906,11 +984,18 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#f0f0f0',
     },
+    infoBoxDark: {
+        backgroundColor: '#1E1E1E',
+        borderColor: '#2C2C2E',
+    },
     infoText: {
         flex: 1,
         fontSize: 14,
         color: '#8E8E93',
         lineHeight: 20,
+    },
+    infoTextDark: {
+        color: '#AEA9A6',
     },
     inputGroup: {
         marginBottom: 20,
@@ -930,6 +1015,11 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#E9ECEF',
     },
+    inputDark: {
+        backgroundColor: '#2C2C2E',
+        borderColor: '#3A3A3C',
+        color: '#fff',
+    },
     textArea: {
         height: 100,
         textAlignVertical: 'top',
@@ -941,6 +1031,9 @@ const styles = StyleSheet.create({
         borderTopWidth: 1,
         borderTopColor: '#f0f0f0',
         marginTop: 10,
+    },
+    modalFooterDark: {
+        borderTopColor: '#2C2C2E',
     },
     modalButton: {
         flex: 1,
@@ -956,6 +1049,10 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#E9ECEF',
     },
+    cancelButtonDark: {
+        backgroundColor: '#2C2C2E',
+        borderColor: '#3A3A3C',
+    },
     saveButtonText: {
         color: '#fff',
         fontWeight: '700',
@@ -965,5 +1062,8 @@ const styles = StyleSheet.create({
         color: '#8E8E93',
         fontWeight: '700',
         fontSize: 15,
+    },
+    cancelButtonTextDark: {
+        color: '#AEA9A6',
     },
 });
