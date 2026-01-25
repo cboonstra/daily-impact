@@ -24,6 +24,43 @@ const DEFAULT_AVATAR = 'https://i.pravatar.cc/150?u=lotte';
 
 // LEVEL_SYSTEM moved to constants/levels.ts
 
+const FriendRow = ({ friend, isDark, isLast }: { friend: typeof FRIENDS[0], isDark: boolean, isLast: boolean }) => {
+    const scaleAnim = useRef(new Animated.Value(1)).current;
+
+    const handleWave = async () => {
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        Animated.sequence([
+            Animated.timing(scaleAnim, { toValue: 1.4, duration: 150, useNativeDriver: true }),
+            Animated.spring(scaleAnim, { toValue: 1, friction: 3, tension: 40, useNativeDriver: true })
+        ]).start();
+    };
+
+    return (
+        <View style={[
+            styles.friendItem,
+            !isLast && styles.friendDivider,
+            !isLast && isDark && styles.friendDividerDark
+        ]}>
+            <Image source={{ uri: friend.avatar }} style={styles.friendAvatar} />
+            <View style={styles.friendInfo}>
+                <Text style={[styles.friendName, isDark && styles.textDark]}>{friend.name}</Text>
+                <Text style={[styles.friendSubtext, isDark && styles.profileBioDark]}>
+                    {friend.impactCount} {friend.impactCount === 1 ? 'impact' : 'impacts'} completed
+                </Text>
+            </View>
+            <TouchableOpacity onPress={handleWave} activeOpacity={0.6}>
+                <Animated.View style={[
+                    styles.waveButton,
+                    isDark && styles.waveButtonDark,
+                    { transform: [{ scale: scaleAnim }] }
+                ]}>
+                    <Text style={styles.waveEmoji}>👋</Text>
+                </Animated.View>
+            </TouchableOpacity>
+        </View>
+    );
+};
+
 export default function ProfileScreen() {
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
@@ -61,11 +98,22 @@ export default function ProfileScreen() {
     // Animations
     const fadeAnims = useRef([
         new Animated.Value(0), // Profile Brief
-        new Animated.Value(0), // Stats
-        new Animated.Value(0), // Calendar
+        new Animated.Value(0), // Stats Row (New)
         new Animated.Value(0), // Friends
+        new Animated.Value(0), // Support
         new Animated.Value(0), // Details
     ]).current;
+
+    const avatarScale = useRef(new Animated.Value(1)).current;
+
+    useEffect(() => {
+        Animated.loop(
+            Animated.sequence([
+                Animated.timing(avatarScale, { toValue: 1.05, duration: 3000, useNativeDriver: true }),
+                Animated.timing(avatarScale, { toValue: 1, duration: 3000, useNativeDriver: true })
+            ])
+        ).start();
+    }, []);
 
     useFocusEffect(
         useCallback(() => {
@@ -189,59 +237,67 @@ export default function ProfileScreen() {
                             activeOpacity={0.8}
                             style={styles.avatarContainer}
                         >
-                            <Image
-                                source={{ uri: profileImage }}
-                                style={styles.avatar}
-                            />
-                            <View style={[styles.editAvatarBadge, isDark && styles.editAvatarBadgeDark]}>
-                                <Ionicons name="camera" size={16} color="#fff" />
-                            </View>
+                            <Animated.View style={{ transform: [{ scale: avatarScale }] }}>
+                                <Image
+                                    source={{ uri: profileImage }}
+                                    style={styles.avatar}
+                                />
+                                <View style={[styles.editAvatarBadge, isDark && styles.editAvatarBadgeDark]}>
+                                    <Ionicons name="camera" size={16} color="#fff" />
+                                </View>
+                            </Animated.View>
                         </TouchableOpacity>
 
                         <Text style={[styles.profileName, isDark && styles.textDark]}>{profile.name}</Text>
                         <Text style={[styles.profileBio, isDark && styles.profileBioDark]}>{profile.bio}</Text>
+                    </Animated.View>
 
-                        <Animated.View style={[
-                            styles.quickStatsRow,
-                            isDark && styles.quickStatsRowDark,
-                            {
-                                opacity: fadeAnims[1],
-                                transform: [{
-                                    scale: fadeAnims[1].interpolate({
-                                        inputRange: [0, 1],
-                                        outputRange: [0.95, 1],
-                                    })
-                                }]
-                            }
-                        ]}>
-                            <View style={styles.quickStat}>
-                                <Text style={[styles.quickStatValue, isDark && styles.textDark]}>{total}</Text>
-                                <Text style={styles.quickStatLabel}>{total === 1 ? 'Impact' : 'Impacts'}</Text>
+                    {/* New Stats Grid */}
+                    <Animated.View style={[
+                        styles.statsGrid,
+                        {
+                            opacity: fadeAnims[1],
+                            transform: [{
+                                translateY: fadeAnims[1].interpolate({
+                                    inputRange: [0, 1],
+                                    outputRange: [20, 0],
+                                })
+                            }]
+                        }
+                    ]}>
+                        <View style={[styles.statCard, isDark && styles.cardDark]}>
+                            <View style={[styles.statIconContainer, { backgroundColor: '#E8F5E9' }]}>
+                                <Ionicons name="leaf" size={20} color="#3F7E44" />
                             </View>
-                            <View style={[styles.statsDivider, isDark && styles.statsDividerDark]} />
-                            <View style={styles.quickStat}>
-                                <Text style={[styles.quickStatValue, isDark && styles.textDark]}>{streak}</Text>
-                                <Text style={styles.quickStatLabel}>Days Streak</Text>
+                            <Text style={[styles.statValue, isDark && styles.textDark]}>{total}</Text>
+                            <Text style={styles.statLabel}>Impacts</Text>
+                        </View>
+
+                        <View style={[styles.statCard, isDark && styles.cardDark]}>
+                            <View style={[styles.statIconContainer, { backgroundColor: '#FFF3E0' }]}>
+                                <Ionicons name="flame" size={20} color="#F57C00" />
                             </View>
-                            <View style={[styles.statsDivider, isDark && styles.statsDividerDark]} />
-                            <TouchableOpacity
-                                style={styles.quickStat}
-                                onPress={async () => {
-                                    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                                    setIsLevelModalVisible(true);
-                                }}
-                            >
-                                <Text style={[styles.quickStatValue, { color: currentLevelInfo.color }]}>Level {currentLevelInfo.level}</Text>
-                                <Text style={styles.quickStatLabel}>Impact Level</Text>
-                            </TouchableOpacity>
-                        </Animated.View>
+                            <Text style={[styles.statValue, isDark && styles.textDark]}>{streak}</Text>
+                            <Text style={styles.statLabel}>Day Streak</Text>
+                        </View>
+
+                        <TouchableOpacity
+                            style={[styles.statCard, isDark && styles.cardDark]}
+                            onPress={() => setIsLevelModalVisible(true)}
+                        >
+                            <View style={[styles.statIconContainer, { backgroundColor: currentLevelInfo.color + '20' }]}>
+                                <Ionicons name={currentLevelInfo.icon as any} size={20} color={currentLevelInfo.color} />
+                            </View>
+                            <Text style={[styles.statValue, isDark && styles.textDark]}>{currentLevelInfo.level}</Text>
+                            <Text style={styles.statLabel}>Level</Text>
+                        </TouchableOpacity>
                     </Animated.View>
 
                     {/* Friends Section */}
                     <Animated.View style={{
-                        opacity: fadeAnims[3],
+                        opacity: fadeAnims[2],
                         transform: [{
-                            translateY: fadeAnims[3].interpolate({
+                            translateY: fadeAnims[2].interpolate({
                                 inputRange: [0, 1],
                                 outputRange: [20, 0],
                             })
@@ -257,27 +313,12 @@ export default function ProfileScreen() {
                         <View style={[styles.friendsCard, isDark && styles.cardDark]}>
                             {FRIENDS.length > 0 ? (
                                 FRIENDS.map((friend, index) => (
-                                    <View key={friend.id} style={[
-                                        styles.friendItem,
-                                        index !== FRIENDS.length - 1 && styles.friendDivider,
-                                        index !== FRIENDS.length - 1 && isDark && styles.friendDividerDark
-                                    ]}>
-                                        <Image source={{ uri: friend.avatar }} style={styles.friendAvatar} />
-                                        <View style={styles.friendInfo}>
-                                            <Text style={[styles.friendName, isDark && styles.textDark]}>{friend.name}</Text>
-                                            <Text style={[styles.friendSubtext, isDark && styles.profileBioDark]}>
-                                                {friend.impactCount} {friend.impactCount === 1 ? 'impact' : 'impacts'} completed
-                                            </Text>
-                                        </View>
-                                        <TouchableOpacity
-                                            style={[styles.waveButton, isDark && styles.waveButtonDark]}
-                                            onPress={async () => {
-                                                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                            }}
-                                        >
-                                            <Text style={styles.waveEmoji}>👋</Text>
-                                        </TouchableOpacity>
-                                    </View>
+                                    <FriendRow
+                                        key={friend.id}
+                                        friend={friend}
+                                        isDark={isDark}
+                                        isLast={index === FRIENDS.length - 1}
+                                    />
                                 ))
                             ) : (
                                 <View style={styles.emptyStateContainer}>
@@ -292,9 +333,9 @@ export default function ProfileScreen() {
                     </Animated.View>
                     {/* Support our Mission Section */}
                     <Animated.View style={{
-                        opacity: fadeAnims[4],
+                        opacity: fadeAnims[3],
                         transform: [{
-                            translateY: fadeAnims[4].interpolate({
+                            translateY: fadeAnims[3].interpolate({
                                 inputRange: [0, 1],
                                 outputRange: [20, 0],
                             })
@@ -304,21 +345,23 @@ export default function ProfileScreen() {
                             <Text style={[styles.sectionTitle, isDark && styles.textDark]}>Support the Mission</Text>
                         </View>
                         <View style={[styles.supportCard, isDark && styles.supportCardDark]}>
-                            <View style={styles.supportIconContainer}>
-                                <Text style={styles.supportEmoji}>☕</Text>
-                            </View>
-                            <View style={styles.supportTextContent}>
-                                <Text style={[styles.supportTitle, isDark && styles.textDark]}>Fuel Our Work</Text>
-                                <Text style={styles.supportDescription}>
-                                    Daily Impact is free and ad-free. If you find value in our mission, consider supporting our journey.
-                                </Text>
+                            <View style={styles.supportContentWrapper}>
+                                <View style={styles.supportIconContainer}>
+                                    <Text style={styles.supportEmoji}>☕</Text>
+                                </View>
+                                <View style={styles.supportTextContent}>
+                                    <Text style={[styles.supportTitle, isDark && styles.textDark]}>Fuel Our Work</Text>
+                                    <Text style={styles.supportDescription}>
+                                        Daily Impact is free & ad-free. Consider supporting our mission.
+                                    </Text>
+                                </View>
                             </View>
                             <TouchableOpacity
                                 style={styles.donateButton}
                                 onPress={() => Linking.openURL('https://ko-fi.com/dailyimpact')}
                             >
-                                <Ionicons name="heart" size={18} color="#fff" style={{ marginRight: 6 }} />
-                                <Text style={styles.donateButtonText}>Support</Text>
+                                <Ionicons name="heart" size={16} color="#fff" style={{ marginRight: 6 }} />
+                                <Text style={styles.donateButtonText}>Support the Mission</Text>
                             </TouchableOpacity>
                         </View>
                     </Animated.View>
@@ -566,11 +609,48 @@ const styles = StyleSheet.create({
         borderRadius: 32,
         padding: 24,
         alignItems: 'center',
-        shadowColor: '#000',
+        shadowColor: 'rgba(0,0,0,0.08)',
+        shadowOffset: { width: 0, height: 12 },
+        shadowOpacity: 0.4,
+        shadowRadius: 16,
+        elevation: 4,
+    },
+    statsGrid: {
+        flexDirection: 'row',
+        gap: 12,
+        width: '100%',
+    },
+    statCard: {
+        flex: 1,
+        backgroundColor: '#fff',
+        borderRadius: 20,
+        padding: 16,
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: 'rgba(0,0,0,0.05)',
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.05,
-        shadowRadius: 10,
+        shadowOpacity: 0.5,
+        shadowRadius: 8,
         elevation: 2,
+    },
+    statIconContainer: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 8,
+    },
+    statValue: {
+        fontSize: 18,
+        fontWeight: '800',
+        color: '#333',
+        marginBottom: 2,
+    },
+    statLabel: {
+        fontSize: 11,
+        color: '#8E8E93',
+        fontWeight: '500',
     },
     profileContent: {
         gap: 20,
@@ -620,40 +700,7 @@ const styles = StyleSheet.create({
     profileBioDark: {
         color: '#AEA9A6',
     },
-    quickStatsRow: {
-        flexDirection: 'row',
-        width: '100%',
-        justifyContent: 'space-between',
-        paddingTop: 16,
-        borderTopWidth: 1,
-        borderTopColor: '#f5f5f5',
-    },
-    quickStatsRowDark: {
-        borderTopColor: '#2C2C2E',
-    },
-    quickStat: {
-        flex: 1,
-        alignItems: 'center',
-    },
-    quickStatValue: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: '#333',
-    },
-    quickStatLabel: {
-        fontSize: 12,
-        color: '#8E8E93',
-        marginTop: 2,
-    },
-    statsDivider: {
-        width: 1,
-        height: '60%',
-        backgroundColor: '#f0f0f0',
-        alignSelf: 'center',
-    },
-    statsDividerDark: {
-        backgroundColor: '#2C2C2E',
-    },
+
     sectionHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -1075,29 +1122,34 @@ const styles = StyleSheet.create({
         color: '#AEA9A6',
     },
     supportCard: {
-        backgroundColor: '#fff',
+        backgroundColor: '#FFFBF5', // Premium warm tint
         borderRadius: 28,
         padding: 20,
+        shadowColor: '#F57C00',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.08,
+        shadowRadius: 16,
+        elevation: 3,
+        borderWidth: 1,
+        borderColor: 'rgba(245, 124, 0, 0.1)',
+        overflow: 'hidden',
+    },
+    supportCardDark: {
+        backgroundColor: '#251E16',
+        borderColor: 'rgba(245, 124, 0, 0.2)',
+        shadowColor: '#000',
+    },
+    supportContentWrapper: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 16,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.05,
-        shadowRadius: 10,
-        elevation: 2,
-        borderWidth: 1,
-        borderColor: '#F2F2F7',
-    },
-    supportCardDark: {
-        backgroundColor: '#1C1C1E',
-        borderColor: '#2C2C2E',
+        marginBottom: 16,
     },
     supportIconContainer: {
         width: 52,
         height: 52,
         borderRadius: 16,
-        backgroundColor: 'rgba(255, 149, 0, 0.1)',
+        backgroundColor: 'rgba(255, 179, 0, 0.15)',
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -1108,28 +1160,33 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     supportTitle: {
-        fontSize: 16,
+        fontSize: 17,
         fontWeight: '700',
-        color: '#333',
-        marginBottom: 2,
+        color: '#4A3B22',
+        marginBottom: 4,
     },
     supportDescription: {
-        fontSize: 12,
+        fontSize: 13,
         color: '#8E8E93',
         lineHeight: 18,
         fontWeight: '500',
     },
     donateButton: {
-        backgroundColor: '#3F7E44', // Using the primary green for consistency
-        paddingHorizontal: 16,
-        paddingVertical: 10,
-        borderRadius: 12,
+        backgroundColor: '#FF9500',
+        width: '100%',
+        paddingVertical: 14,
+        borderRadius: 16,
         flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: '#FF9500',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
     },
     donateButtonText: {
         color: '#fff',
-        fontSize: 13,
+        fontSize: 15,
         fontWeight: '700',
     },
 });
