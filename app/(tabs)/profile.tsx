@@ -19,6 +19,33 @@ const FRIENDS = [
     { id: '4', name: 'Elena Petrova', impactCount: 89, avatar: 'https://i.pravatar.cc/150?u=elena' },
 ];
 
+const CREATOR_INITIATIVES = [
+    {
+        id: 'cookbook',
+        title: 'The Vegan Starter Kit',
+        description: 'Lifestyle guide, recipes & impact of plant-based living.',
+        icon: 'book-outline', // Ionicons name
+        emoji: '📖',
+        url: 'https://example.com/vegan-starter-kit'
+    },
+    {
+        id: 'website',
+        title: 'Lentil & Lime',
+        description: 'Plant-based cooking guides and zero-waste tips.',
+        icon: 'restaurant-outline',
+        emoji: '🍋',
+        url: 'https://lentil-lime.com'
+    },
+    {
+        id: 'planting',
+        title: 'Plant It Forward',
+        description: 'Spreading awareness on plant-based eating through education.',
+        icon: 'leaf-outline',
+        emoji: '🌱',
+        url: 'https://example.com/plant-it-forward'
+    }
+];
+
 const PROFILE_IMAGE_KEY = 'user_profile_image';
 const DEFAULT_AVATAR = 'https://i.pravatar.cc/150?u=lotte';
 
@@ -375,6 +402,44 @@ export default function ProfileScreen() {
                                 <Ionicons name="heart" size={16} color="#fff" style={{ marginRight: 6 }} />
                                 <Text style={styles.donateButtonText}>Support the Mission</Text>
                             </TouchableOpacity>
+                        </View>
+                    </Animated.View>
+
+                    {/* Creator's Initiatives Section */}
+                    <Animated.View style={{
+                        opacity: fadeAnims[3], // Reuse same animation timing or add a new one
+                        transform: [{
+                            translateY: fadeAnims[3].interpolate({
+                                inputRange: [0, 1],
+                                outputRange: [20, 0],
+                            })
+                        }],
+                        marginTop: 10 // Extra spacing
+                    }}>
+                        <View style={styles.sectionHeader}>
+                            <Text style={[styles.sectionTitle, isDark && styles.textDark]}>More from Charlotte</Text>
+                        </View>
+                        <View style={[styles.initiativesCard, isDark && styles.initiativesCardDark]}>
+                            {CREATOR_INITIATIVES.map((item, index) => (
+                                <TouchableOpacity
+                                    key={item.id}
+                                    style={[
+                                        styles.initiativeRow,
+                                        index !== CREATOR_INITIATIVES.length - 1 && styles.initiativeDivider,
+                                        index !== CREATOR_INITIATIVES.length - 1 && isDark && styles.initiativeDividerDark
+                                    ]}
+                                    onPress={() => Linking.openURL(item.url)}
+                                >
+                                    <View style={[styles.initiativeIconBox, { backgroundColor: isDark ? '#3A3A3C' : '#F0F2F5' }]}>
+                                        <Text style={{ fontSize: 20 }}>{item.emoji}</Text>
+                                    </View>
+                                    <View style={styles.initiativeInfo}>
+                                        <Text style={[styles.initiativeTitle, isDark && styles.textDark]}>{item.title}</Text>
+                                        <Text style={styles.initiativeDesc} numberOfLines={1}>{item.description}</Text>
+                                    </View>
+                                    <Ionicons name="open-outline" size={16} color={isDark ? '#8E8E93' : '#C7C7CC'} />
+                                </TouchableOpacity>
+                            ))}
                         </View>
                     </Animated.View>
 
@@ -1447,5 +1512,52 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 15,
         fontWeight: '700',
+    },
+    initiativesCard: {
+        backgroundColor: '#fff',
+        borderRadius: 24,
+        padding: 20,
+        shadowColor: 'rgba(0,0,0,0.05)',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.5,
+        shadowRadius: 8,
+        elevation: 2,
+    },
+    initiativesCardDark: {
+        backgroundColor: '#1C1C1E',
+    },
+    initiativeRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 12,
+    },
+    initiativeDivider: {
+        borderBottomWidth: 1,
+        borderBottomColor: '#F2F2F7',
+    },
+    initiativeDividerDark: {
+        borderBottomColor: '#2C2C2E',
+    },
+    initiativeIconBox: {
+        width: 44,
+        height: 44,
+        borderRadius: 12,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 16,
+    },
+    initiativeInfo: {
+        flex: 1,
+        marginRight: 12,
+    },
+    initiativeTitle: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#333',
+        marginBottom: 2,
+    },
+    initiativeDesc: {
+        fontSize: 13,
+        color: '#8E8E93',
     },
 });
