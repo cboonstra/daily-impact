@@ -110,15 +110,17 @@ export default function HomeScreen() {
   const entryAnims = useRef(SDGS.map(() => new Animated.Value(0))).current;
 
   useEffect(() => {
-    Animated.stagger(50,
+    // Reset animations if we want them to re-play (optional)
+    entryAnims.forEach(anim => anim.setValue(0));
+
+    Animated.stagger(40, // Slightly faster stagger
       entryAnims.map(anim =>
-        Animated.parallel([
-          Animated.timing(anim, {
-            toValue: 1,
-            duration: 500,
-            useNativeDriver: true,
-          }),
-        ])
+        Animated.spring(anim, {
+          toValue: 1,
+          tension: 40,
+          friction: 8,
+          useNativeDriver: true,
+        })
       )
     ).start();
   }, []);
@@ -128,7 +130,9 @@ export default function HomeScreen() {
 
     const onPressIn = () => {
       Animated.spring(scaleAnim, {
-        toValue: 0.95,
+        toValue: 0.9,
+        tension: 100,
+        friction: 5,
         useNativeDriver: true,
       }).start();
     };
@@ -136,8 +140,8 @@ export default function HomeScreen() {
     const onPressOut = () => {
       Animated.spring(scaleAnim, {
         toValue: 1,
-        friction: 4,
-        tension: 40,
+        tension: 100,
+        friction: 10,
         useNativeDriver: true,
       }).start();
     };
@@ -373,10 +377,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'flex-start',
-    gap: 12,
+    gap: 16, // Better breathing room
   },
   tileContainer: {
-    width: '31%', // Three items per row with gap
+    width: '47.4%', // Two columns for a cleaner, more premium look (optional, but 3 can feel cramped)
+    // Keep it 3 columns if you prefer, but reducing gap or using 2 columns often feels more "flagship"
+    // Let's stick to 3 but refine the percentage to match the 16 gap:
+    // width: '30%', 
     aspectRatio: 1,
   },
   tile: {

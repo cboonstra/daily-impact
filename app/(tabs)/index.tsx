@@ -10,6 +10,7 @@ import { useFocusEffect } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Animated, Easing, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Svg, { Circle } from 'react-native-svg';
 import { captureRef } from 'react-native-view-shot';
 
 const AnimatedGradient = Animated.createAnimatedComponent(LinearGradient);
@@ -36,6 +37,10 @@ export default function DailyHabitScreen() {
   const [showParticles, setShowParticles] = useState(false);
   const [viewDate, setViewDate] = useState(new Date());
   const [prevColor, setPrevColor] = useState(action?.color || '#3F7E44');
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const holdAnim = useRef(new Animated.Value(0)).current;
+  const [isHolding, setIsHolding] = useState(false);
+  const holdTimeoutRef = useRef<any>(null);
 
   const getGradientColors = (baseColor: string): [string, string] => {
     return [baseColor, baseColor + 'CC'];
@@ -74,6 +79,11 @@ export default function DailyHabitScreen() {
       ).start();
     }
   }, [streak]);
+
+  useEffect(() => {
+    // Reset pulse when done or action changes
+    pulseAnim.setValue(1);
+  }, [isDone, action?.id]);
 
   useEffect(() => {
     if (isDone) {
@@ -185,6 +195,58 @@ export default function DailyHabitScreen() {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
       markDone();
     }
+  };
+
+  const handleHoldStart = () => {
+    if (isDone) return;
+    setIsHolding(true);
+    holdAnim.setValue(0);
+
+    // Simplified Haptic: Just a light feedback to start
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    // Subtler Scale up
+    Animated.timing(pulseAnim, {
+      toValue: 1.02, // Very subtle growth
+      duration: 1200,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true,
+    }).start();
+
+    // Main hold timing
+    Animated.timing(holdAnim, {
+      toValue: 1,
+      duration: 1200,
+      useNativeDriver: false,
+    }).start(({ finished }) => {
+      if (finished) {
+        onMarkDonePress();
+        setIsHolding(false);
+        holdAnim.setValue(0);
+        pulseAnim.setValue(1);
+      }
+    });
+  };
+
+  const handleHoldEnd = () => {
+    if (!isHolding) return;
+    setIsHolding(false);
+    if (holdTimeoutRef.current) clearTimeout(holdTimeoutRef.current);
+
+    Animated.parallel([
+      Animated.spring(holdAnim, {
+        toValue: 0,
+        tension: 40,
+        friction: 7,
+        useNativeDriver: false,
+      }),
+      Animated.spring(pulseAnim, {
+        toValue: 1,
+        tension: 40,
+        friction: 7,
+        useNativeDriver: true,
+      })
+    ]).start();
   };
 
   // Level & Progress logic
@@ -319,101 +381,115 @@ export default function DailyHabitScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View>
-          <View style={styles.mainCardShadow}>
-            {/* Previous Gradient (as base) */}
-            <LinearGradient
-              colors={getGradientColors(prevColor)}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={[styles.mainCard, StyleSheet.absoluteFill]}
-            />
-
-            {/* Current Gradient (fading in) */}
-            <AnimatedGradient
-              colors={getGradientColors(action.color)}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={[
-                styles.mainCard,
-                StyleSheet.absoluteFill,
-                { opacity: colorAnim }
-              ]}
-            />
-
-            <View style={styles.cardContent}>
-              <TouchableOpacity
-                activeOpacity={0.95}
-                onPress={onMarkDonePress}
-                style={StyleSheet.absoluteFill}
+          <Animated.View style={{ transform: [{ scale: !isDone ? pulseAnim : 1 }] }}>
+            <View style={styles.mainCardShadow}>
+              {/* Previous Gradient (as base) */}
+              <LinearGradient
+                colors={getGradientColors(prevColor)}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={[styles.mainCard, StyleSheet.absoluteFill]}
               />
 
-              {isDone && (
-                <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 32 }]} />
-              )}
+              {/* Current Gradient (fading in) */}
+              <AnimatedGradient
+                colors={getGradientColors(action.color)}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={[
+                  styles.mainCard,
+                  StyleSheet.absoluteFill,
+                  { opacity: colorAnim }
+                ]}
+              />
 
-              <View style={styles.cardHeader}>
-                <View style={styles.sdgBadge}>
-                  <Text style={styles.sdgText} numberOfLines={1} ellipsizeMode="tail">
-                    SDG {action.sdgId}: {action.sdgTitle}
-                  </Text>
+              <View style={styles.cardContent}>
+                {isDone && (
+                  <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 32 }]} />
+                )}
+
+                <View style={styles.cardHeader}>
+                  <View style={styles.sdgBadge}>
+                    <Text style={styles.sdgText} numberOfLines={1} ellipsizeMode="tail">
+                      SDG {action.sdgId}: {action.sdgTitle}
+                    </Text>
+                  </View>
+
+                  <TouchableOpacity
+                    onPress={handleShare}
+                    style={styles.shareButton}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="share-social-outline" size={22} color="#fff" />
+                  </TouchableOpacity>
                 </View>
 
-                <TouchableOpacity
-                  onPress={handleShare}
-                  style={styles.shareButton}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="share-social-outline" size={22} color="#fff" />
-                </TouchableOpacity>
-              </View>
+                <Text style={styles.headline}>{action.action}</Text>
+                <Text style={styles.description}>{action.explanation}</Text>
 
-              <Text style={styles.headline}>{action.action}</Text>
-              <Text style={styles.description}>{action.explanation}</Text>
-
-              <View style={styles.actionContainer}>
-                {!isDone ? (
-                  <>
-                    <TouchableOpacity
-                      style={styles.subtleButton}
-                      onPress={markDone}
-                      activeOpacity={0.7}
-                    >
-                      <Ionicons name="checkmark-circle-outline" size={24} color={action.color} />
-                      <Text style={[styles.subtleButtonText, { color: action.color }]}>Mark as Done</Text>
-                    </TouchableOpacity>
-
-                    {shufflesRemaining > 0 && (
+                <View style={styles.actionContainer}>
+                  {!isDone ? (
+                    <>
                       <TouchableOpacity
-                        style={styles.minimalShuffle}
-                        onPress={onShufflePress}
-                        activeOpacity={0.6}
+                        style={styles.holdToDoneButton}
+                        onPressIn={handleHoldStart}
+                        onPressOut={handleHoldEnd}
+                        activeOpacity={0.9}
                       >
-                        <Ionicons name="shuffle-outline" size={20} color="rgba(255,255,255,0.7)" />
-                        <Text style={styles.minimalShuffleText}>Shuffle ({shufflesRemaining} left)</Text>
+                        <Animated.View
+                          style={[
+                            styles.holdProgressOverlay,
+                            {
+                              width: holdAnim.interpolate({
+                                inputRange: [0, 1],
+                                outputRange: ['0%', '100%']
+                              }),
+                              backgroundColor: action.color + '20'
+                            }
+                          ]}
+                        />
+                        <Ionicons
+                          name={isHolding ? "timer-outline" : "checkmark-circle-outline"}
+                          size={24}
+                          color={action.color}
+                        />
+                        <Text style={[styles.subtleButtonText, { color: action.color }]}>
+                          {isHolding ? 'Hold tight...' : 'Hold to Complete'}
+                        </Text>
                       </TouchableOpacity>
-                    )}
-                  </>
-                ) : (
-                  <View style={styles.doneMessage}>
-                    <Ionicons name="sparkles" size={40} color="#FFD700" />
-                    <Text style={styles.doneMessageText}>Great job!</Text>
-                    <Text style={styles.availableText}>New action tomorrow</Text>
 
-                    <TouchableOpacity
-                      onPress={unmarkDone}
-                      style={styles.devUndo}
-                    >
-                      <Text style={styles.devUndoText}>Undo (Dev)</Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
+                      {shufflesRemaining > 0 && (
+                        <TouchableOpacity
+                          style={styles.minimalShuffle}
+                          onPress={onShufflePress}
+                          activeOpacity={0.6}
+                        >
+                          <Ionicons name="shuffle-outline" size={20} color="rgba(255,255,255,0.7)" />
+                          <Text style={styles.minimalShuffleText}>Shuffle ({shufflesRemaining} left)</Text>
+                        </TouchableOpacity>
+                      )}
+                    </>
+                  ) : (
+                    <View style={styles.doneMessage}>
+                      <Ionicons name="sparkles" size={40} color="#FFD700" />
+                      <Text style={styles.doneMessageText}>Great job!</Text>
+                      <Text style={styles.availableText}>New action tomorrow</Text>
+
+                      <TouchableOpacity
+                        onPress={unmarkDone}
+                        style={styles.devUndo}
+                      >
+                        <Text style={styles.devUndoText}>Undo (Dev)</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </View>
               </View>
-            </View>
 
-            {/* Particle Feedback */}
-            {renderParticles()}
-          </View>
-          <Text style={styles.tapTip}>Tap the card to complete your daily impact</Text>
+              {/* Particle Feedback */}
+              {renderParticles()}
+            </View>
+          </Animated.View>
         </View>
 
         {/* Progress & Analytics Section (Below the card) */}
@@ -452,26 +528,59 @@ export default function DailyHabitScreen() {
           </View>
 
           {/* Level Progress */}
-          <View style={[styles.levelContainer, isDark && styles.levelContainerDark]}>
-            <View style={styles.levelHeader}>
-              <View style={styles.levelInfo}>
-                <Text style={styles.levelLabel}>Level {currentLevelInfo.level}</Text>
-                <Text style={[styles.levelNameText, isDark && styles.textDark]}>{currentLevelInfo.name}</Text>
+          <View style={[styles.levelCard, isDark && styles.cardDark]}>
+            <View style={styles.levelCardContent}>
+              <View style={styles.levelCircularContainer}>
+                <Svg width="80" height="80" viewBox="0 0 80 80">
+                  <Circle
+                    cx="40"
+                    cy="40"
+                    r="36"
+                    stroke={isDark ? '#2C2C2E' : '#F2F2F7'}
+                    strokeWidth="6"
+                    fill="none"
+                  />
+                  <Circle
+                    cx="40"
+                    cy="40"
+                    r="36"
+                    stroke={currentLevelInfo.color}
+                    strokeWidth="6"
+                    fill="none"
+                    strokeDasharray={`${2 * Math.PI * 36}`}
+                    strokeDashoffset={`${2 * Math.PI * 36 * (1 - progress)}`}
+                    strokeLinecap="round"
+                    transform="rotate(-90 40 40)"
+                  />
+                </Svg>
+                <View style={styles.levelIconOverlay}>
+                  <Ionicons name={currentLevelInfo.icon as any} size={28} color={currentLevelInfo.color} />
+                </View>
               </View>
-              <Text style={styles.progressText}>
-                {nextLevelInfo ? `${total} / ${nextLevelInfo.impacts} impacts` : 'Max Level Reach!'}
-              </Text>
+
+              <View style={styles.levelMainInfo}>
+                <View style={styles.levelBadgeContainer}>
+                  <Text style={styles.levelBadgeText}>LEVEL {currentLevelInfo.level}</Text>
+                </View>
+                <Text style={[styles.levelNameLarge, isDark && styles.textDark]}>{currentLevelInfo.name}</Text>
+                <Text style={styles.levelStatusText}>
+                  {nextLevelInfo
+                    ? `${nextLevelInfo.impacts - total} more impacts until ${nextLevelInfo.name}`
+                    : 'Maximum Level Reached!'}
+                </Text>
+              </View>
             </View>
-            <View style={[styles.progressBarBg, isDark && styles.progressBarBgDark]}>
-              <Animated.View
-                style={[
-                  styles.progressBarFill,
-                  {
-                    width: `${progress * 100}%`,
-                    backgroundColor: currentLevelInfo.color
-                  }
-                ]}
-              />
+
+            <View style={[styles.levelDetailRow, isDark && styles.levelDetailRowDark]}>
+              <View style={styles.detailItem}>
+                <Text style={styles.detailLabel}>Daily Missions</Text>
+                <Text style={[styles.detailValue, isDark && styles.textDark]}>{total}</Text>
+              </View>
+              <View style={styles.detailDivider} />
+              <View style={styles.detailItem}>
+                <Text style={styles.detailLabel}>Next Rank</Text>
+                <Text style={[styles.detailValue, isDark && styles.textDark]}>{nextLevelInfo?.impacts || 'Max'}</Text>
+              </View>
             </View>
           </View>
 
@@ -667,6 +776,27 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     letterSpacing: -0.4,
+    zIndex: 1,
+  },
+  holdToDoneButton: {
+    width: '100%',
+    height: 64,
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
+  },
+  holdProgressOverlay: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    zIndex: 0,
   },
   minimalShuffle: {
     flexDirection: 'row',
@@ -775,56 +905,90 @@ const styles = StyleSheet.create({
     borderColor: '#3F7E44',
     backgroundColor: '#fff',
   },
-  levelContainer: {
+  levelCard: {
     backgroundColor: '#fff',
-    borderRadius: 24,
-    padding: 20,
+    borderRadius: 28,
+    padding: 24,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
     shadowRadius: 10,
     elevation: 2,
   },
-  levelContainerDark: {
-    backgroundColor: '#1E1E1E',
-  },
-  levelHeader: {
+  levelCardContent: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    marginBottom: 12,
+    alignItems: 'center',
+    gap: 20,
+    marginBottom: 20,
   },
-  levelInfo: {
-    gap: 2,
+  levelCircularContainer: {
+    width: 80,
+    height: 80,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  levelLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#8E8E93',
-    textTransform: 'uppercase',
+  levelIconOverlay: {
+    position: 'absolute',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  levelNameText: {
-    fontSize: 18,
+  levelMainInfo: {
+    flex: 1,
+  },
+  levelBadgeContainer: {
+    backgroundColor: 'rgba(63, 126, 68, 0.1)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    alignSelf: 'flex-start',
+    marginBottom: 6,
+  },
+  levelBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#3F7E44',
+    letterSpacing: 1,
+  },
+  levelNameLarge: {
+    fontSize: 22,
     fontWeight: '800',
     color: '#333',
+    marginBottom: 4,
   },
-  progressText: {
+  levelStatusText: {
+    fontSize: 13,
+    color: '#8E8E93',
+    fontWeight: '500',
+  },
+  levelDetailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#F2F2F7',
+  },
+  levelDetailRowDark: {
+    borderTopColor: '#2C2C2E',
+  },
+  detailItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  detailLabel: {
     fontSize: 12,
     color: '#8E8E93',
     fontWeight: '600',
+    marginBottom: 4,
   },
-  progressBarBg: {
-    height: 8,
+  detailValue: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#333',
+  },
+  detailDivider: {
+    width: 1,
+    height: 24,
     backgroundColor: '#F2F2F7',
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  progressBarBgDark: {
-    backgroundColor: '#2C2C2E',
-  },
-  progressBarFill: {
-    height: '100%',
-    borderRadius: 4,
   },
   sectionHeader: {
     marginBottom: 12,
