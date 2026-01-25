@@ -285,11 +285,14 @@ export default function ProfileScreen() {
                             style={[styles.statCard, isDark && styles.cardDark]}
                             onPress={() => setIsLevelModalVisible(true)}
                         >
-                            <View style={[styles.statIconContainer, { backgroundColor: currentLevelInfo.color + '20' }]}>
-                                <Ionicons name={currentLevelInfo.icon as any} size={20} color={currentLevelInfo.color} />
+                            <View style={styles.statCardInner}>
+                                <View style={[styles.statIconContainer, { backgroundColor: currentLevelInfo.color + '20' }]}>
+                                    <Ionicons name={currentLevelInfo.icon as any} size={20} color={currentLevelInfo.color} />
+                                </View>
+                                <Ionicons name="chevron-forward" size={16} color={isDark ? '#666' : '#C7C7CC'} style={styles.statArrow} />
                             </View>
                             <Text style={[styles.statValue, isDark && styles.textDark]}>{currentLevelInfo.level}</Text>
-                            <Text style={styles.statLabel}>Level</Text>
+                            <Text style={styles.statLabel}>Current Level</Text>
                         </TouchableOpacity>
                     </Animated.View>
 
@@ -446,33 +449,121 @@ export default function ProfileScreen() {
                             <View style={[styles.modalIconContainer, { backgroundColor: currentLevelInfo.color + '20' }]}>
                                 <Ionicons name={currentLevelInfo.icon as any} size={32} color={currentLevelInfo.color} />
                             </View>
-                            <Text style={[styles.modalTitle, isDark && styles.textDark]}>Impact Levels</Text>
-                            <Text style={styles.modalSubtitle}>Current progress: {total} {total === 1 ? 'impact' : 'impacts'}</Text>
+                            <Text style={[styles.modalTitle, isDark && styles.textDark]}>{currentLevelInfo.name}</Text>
+                            <View style={styles.progressBarContainer}>
+                                <View style={styles.progressBarBackground}>
+                                    <View style={[styles.progressBarFillWrapper, {
+                                        width: `${(() => {
+                                            const nextLevel = LEVEL_SYSTEM.find(l => l.level === currentLevelInfo.level + 1);
+                                            if (!nextLevel) return 100;
+                                            const progress = (total - currentLevelInfo.impacts) / (nextLevel.impacts - currentLevelInfo.impacts);
+                                            return Math.min(Math.max(progress * 100, 5), 100);
+                                        })()}%`,
+                                    }]}>
+                                        <View style={[styles.progressBarFill, { backgroundColor: currentLevelInfo.color }]} />
+                                    </View>
+                                </View>
+                                <Text style={styles.progressText}>
+                                    {(() => {
+                                        const nextLevel = LEVEL_SYSTEM.find(l => l.level === currentLevelInfo.level + 1);
+                                        if (!nextLevel) return 'Max level reached! 🎉';
+                                        const remaining = nextLevel.impacts - total;
+                                        return `${remaining} more ${remaining === 1 ? 'impact' : 'impacts'} to reach ${nextLevel.name}`;
+                                    })()}
+                                </Text>
+                            </View>
                         </View>
 
                         <ScrollView style={styles.levelsList} showsVerticalScrollIndicator={false}>
-                            {LEVEL_SYSTEM.map((l) => {
+                            <View style={styles.timelineContainer}>
+                                {LEVEL_SYSTEM.map((l, index) => {
+                                    if (index === LEVEL_SYSTEM.length - 1) return null;
+                                    return (
+                                        <View
+                                            key={`line-${l.level}`}
+                                            style={[
+                                                styles.timelineSegment,
+                                                {
+                                                    backgroundColor: l.color,
+                                                    top: 30 + (index * 88), // Approximate spacing based on item height
+                                                    height: 88
+                                                }
+                                            ]}
+                                        />
+                                    );
+                                })}
+                            </View>
+                            {LEVEL_SYSTEM.map((l, index) => {
                                 const isReached = total >= l.impacts;
                                 const isCurrent = currentLevelInfo.level === l.level;
+                                const isLocked = !isReached;
 
                                 return (
                                     <View key={l.level} style={[
-                                        styles.levelItem,
-                                        isDark && styles.levelItemDark,
-                                        isReached && styles.levelItemReached,
-                                        isReached && isDark && styles.levelItemReachedDark,
-                                        isCurrent && { borderColor: l.color, borderWidth: 2 }
+                                        styles.levelRow,
+                                        index === LEVEL_SYSTEM.length - 1 && { paddingBottom: 0 }
                                     ]}>
-                                        <View style={[styles.levelIconBox, { backgroundColor: isReached ? l.color : (isDark ? '#3A3A3C' : '#F0F0F0') }]}>
-                                            <Ionicons name={l.icon as any} size={20} color={isReached ? '#fff' : (isDark ? '#AEA9A6' : '#8E8E93')} />
+                                        <View style={[
+                                            styles.timelineNode,
+                                            isReached ? { backgroundColor: l.color, borderColor: l.color } : { backgroundColor: isDark ? '#222' : '#F0F0F0', borderColor: isDark ? '#333' : '#E0E0E0' },
+                                            isCurrent && {
+                                                transform: [{ scale: 1.3 }],
+                                                borderWidth: 3,
+                                                borderColor: '#fff',
+                                                backgroundColor: l.color // Ensure current node is colored
+                                            }
+                                        ]}>
+                                            <Ionicons
+                                                name={isLocked ? "lock-closed" : "checkmark"}
+                                                size={isCurrent ? 16 : 14}
+                                                color={isReached ? '#fff' : (isDark ? '#555' : '#AAA')}
+                                            />
                                         </View>
-                                        <View style={styles.levelInfo}>
-                                            <Text style={[styles.levelName, isReached && { color: isDark ? '#fff' : '#333' }, !isReached && isDark && { color: '#AEA9A6' }]}>{l.name}</Text>
-                                            <Text style={styles.levelRequirement}>{l.impacts} {l.impacts === 1 ? 'impact' : 'impacts'} required</Text>
+
+                                        <View style={[
+                                            styles.levelCard,
+                                            isDark && styles.levelCardDark,
+                                            isCurrent && {
+                                                borderColor: l.color,
+                                                borderWidth: 1.5,
+                                                backgroundColor: isDark ? '#2C2C2E' : '#fff' // Pop out current card
+                                            },
+                                            isLocked && { opacity: 0.7 } // Slightly dim locked cards
+                                        ]}>
+                                            <View style={[
+                                                styles.levelIconBox,
+                                                {
+                                                    backgroundColor: isReached ? l.color + '20' : (isDark ? '#3A3A3C' : '#F5F5F5'),
+                                                    // Give locked items a hint of their future color
+                                                    borderColor: isLocked ? l.color + '10' : 'transparent',
+                                                    borderWidth: isLocked ? 1 : 0
+                                                }
+                                            ]}>
+                                                <Ionicons
+                                                    name={l.icon as any}
+                                                    size={22}
+                                                    color={isReached ? l.color : (isLocked ? l.color + '60' : (isDark ? '#555' : '#AAA'))}
+                                                />
+                                            </View>
+                                            <View style={styles.levelInfo}>
+                                                <Text style={[
+                                                    styles.levelName,
+                                                    isDark && styles.textDark,
+                                                    isLocked && { color: isDark ? '#888' : '#999' }
+                                                ]}>{l.name}</Text>
+                                                <Text style={[
+                                                    styles.levelRequirement,
+                                                    isCurrent && { color: l.color, fontWeight: '700' }
+                                                ]}>
+                                                    {l.impacts} Impacts
+                                                </Text>
+                                            </View>
+                                            {isCurrent && (
+                                                <View style={styles.currentBadge}>
+                                                    <Text style={[styles.currentBadgeText, { color: l.color }]}>Current</Text>
+                                                </View>
+                                            )}
                                         </View>
-                                        {isReached && (
-                                            <Ionicons name="checkmark-circle" size={24} color={l.color} />
-                                        )}
                                     </View>
                                 );
                             })}
@@ -869,7 +960,7 @@ const styles = StyleSheet.create({
     },
     modalHeader: {
         alignItems: 'center',
-        marginBottom: 24,
+        marginBottom: 32,
     },
     modalIconContainer: {
         width: 64,
@@ -889,34 +980,95 @@ const styles = StyleSheet.create({
         color: '#8E8E93',
         marginTop: 4,
     },
+    statCardInner: {
+        width: '100%',
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        position: 'relative',
+    },
+    statArrow: {
+        position: 'absolute',
+        right: -8,
+        top: -8,
+        opacity: 0.6,
+    },
+    progressBarContainer: {
+        width: '100%',
+        marginTop: 16,
+        paddingHorizontal: 8,
+    },
+    progressBarBackground: {
+        height: 6,
+        backgroundColor: '#F0F0F0',
+        borderRadius: 3,
+        overflow: 'hidden',
+        marginBottom: 8,
+    },
+    progressBarFillWrapper: {
+        height: '100%',
+        borderRadius: 3,
+        overflow: 'hidden',
+    },
+    progressBarFill: {
+        flex: 1,
+    },
+    progressText: {
+        fontSize: 13,
+        color: '#8E8E93',
+        textAlign: 'center',
+        fontWeight: '500',
+    },
     levelsList: {
         marginBottom: 24,
+        position: 'relative',
+        paddingLeft: 10,
     },
-    levelItem: {
+    timelineContainer: {
+        position: 'absolute',
+        left: 23,
+        top: 0,
+        bottom: 0,
+        width: 4,
+        zIndex: -1,
+        alignItems: 'center',
+    },
+    timelineSegment: {
+        position: 'absolute',
+        width: 3,
+        borderRadius: 1.5,
+        opacity: 0.3,
+    },
+    levelRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 16,
-        borderRadius: 16,
-        backgroundColor: '#F8F9FA',
-        marginBottom: 12,
-        borderWidth: 2,
-        borderColor: 'transparent',
+        marginBottom: 20,
     },
-    levelItemDark: {
+    timelineNode: {
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 2,
+        marginRight: 16,
+        zIndex: 1,
+    },
+    levelCard: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#F8F9FA',
+        padding: 12,
+        borderRadius: 16,
+    },
+    levelCardDark: {
         backgroundColor: '#2C2C2E',
     },
-    levelItemReached: {
-        backgroundColor: '#fff',
-        borderColor: '#f0f0f0',
-    },
-    levelItemReachedDark: {
-        backgroundColor: '#1E1E1E',
-        borderColor: '#2C2C2E',
-    },
     levelIconBox: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+        width: 44,
+        height: 44,
+        borderRadius: 12,
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 12,
@@ -927,11 +1079,24 @@ const styles = StyleSheet.create({
     levelName: {
         fontSize: 16,
         fontWeight: '700',
-        color: '#8E8E93',
+        color: '#333',
+        marginBottom: 2,
     },
     levelRequirement: {
         fontSize: 12,
         color: '#8E8E93',
+    },
+    currentBadge: {
+        backgroundColor: 'rgba(255,255,255,0.1)',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 8,
+        marginLeft: 8,
+    },
+    currentBadgeText: {
+        fontSize: 10,
+        fontWeight: '800',
+        textTransform: 'uppercase',
     },
     closeModalButton: {
         backgroundColor: '#3F7E44',
