@@ -1,9 +1,12 @@
 import { useDailyImpact } from '@/hooks/useDailyImpact';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as Sharing from 'expo-sharing';
 import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Animated, Easing, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { captureRef } from 'react-native-view-shot';
+
+const AnimatedGradient = Animated.createAnimatedComponent(LinearGradient);
 
 export default function DailyHabitScreen() {
   const { action, isDone, shufflesRemaining, isLoading, shuffle, markDone, unmarkDone } = useDailyImpact();
@@ -16,13 +19,17 @@ export default function DailyHabitScreen() {
   const [showParticles, setShowParticles] = useState(false);
   const [prevColor, setPrevColor] = useState(action?.color || '#3F7E44');
 
+  const getGradientColors = (baseColor: string): [string, string] => {
+    return [baseColor, baseColor + 'CC'];
+  };
+
   useEffect(() => {
     if (action?.color) {
       colorAnim.setValue(0);
       Animated.timing(colorAnim, {
         toValue: 1,
         duration: 800,
-        useNativeDriver: false, // Colors need false
+        useNativeDriver: false, // Opacity needs to be true, but we are using colorAnim for layer fading
       }).start(() => {
         setPrevColor(action.color);
       });
@@ -76,10 +83,7 @@ export default function DailyHabitScreen() {
     );
   }
 
-  const animatedBgColor = colorAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [prevColor, action.color],
-  });
+  // No longer needed: const animatedBgColor = colorAnim.interpolate...
 
   const renderParticles = () => {
     if (!showParticles) return null;
@@ -141,81 +145,103 @@ export default function DailyHabitScreen() {
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={{ flex: 1 }}>
-          <Animated.View style={[styles.mainCard, { backgroundColor: animatedBgColor }]}>
-            <TouchableOpacity
-              activeOpacity={0.95}
-              onPress={() => !isDone && markDone()}
-              style={StyleSheet.absoluteFill}
+          <View style={styles.mainCardShadow}>
+            {/* Previous Gradient (as base) */}
+            <LinearGradient
+              colors={getGradientColors(prevColor)}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={[styles.mainCard, StyleSheet.absoluteFill]}
             />
 
-            {isDone && (
-              <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 32 }]} />
-            )}
+            {/* Current Gradient (fading in) */}
+            <AnimatedGradient
+              colors={getGradientColors(action.color)}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={[
+                styles.mainCard,
+                StyleSheet.absoluteFill,
+                { opacity: colorAnim }
+              ]}
+            />
 
-            <View style={styles.cardHeader}>
-              <View style={styles.sdgBadge}>
-                <Text style={styles.sdgText}>SDG {action.sdgId}: {action.sdgTitle}</Text>
-              </View>
-
+            <View style={styles.cardContent}>
               <TouchableOpacity
-                onPress={handleShare}
-                style={styles.shareButton}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="share-social-outline" size={22} color="#fff" />
-              </TouchableOpacity>
-            </View>
-
-            <Text style={styles.headline}>{action.action}</Text>
-            <Text style={styles.description}>{action.explanation}</Text>
-
-            <View style={styles.actionContainer}>
-              {!isDone ? (
-                <>
-                  <TouchableOpacity
-                    style={styles.subtleButton}
-                    onPress={markDone}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons name="checkmark-circle-outline" size={24} color={action.color} />
-                    <Text style={[styles.subtleButtonText, { color: action.color }]}>Mark as Done</Text>
-                  </TouchableOpacity>
-
-                  {shufflesRemaining > 0 && (
-                    <TouchableOpacity
-                      style={styles.minimalShuffle}
-                      onPress={shuffle}
-                      activeOpacity={0.6}
-                    >
-                      <Ionicons name="shuffle-outline" size={20} color="rgba(255,255,255,0.7)" />
-                      <Text style={styles.minimalShuffleText}>Shuffle ({shufflesRemaining} left)</Text>
-                    </TouchableOpacity>
-                  )}
-                </>
-              ) : (
-                <View style={styles.doneMessage}>
-                  <View style={styles.completionAnimationContainer}>
-                    {renderParticles()}
-                    <Animated.View style={{ transform: [{ scale: popAnim }] }}>
-                      <Ionicons name="checkmark-circle" size={80} color="#fff" />
-                    </Animated.View>
-                  </View>
-                  <Animated.Text style={[styles.doneMessageText, { opacity: popAnim }]}>Great job!</Animated.Text>
-                  <Animated.Text style={[styles.availableText, { opacity: popAnim }]}>Available again tomorrow</Animated.Text>
-                </View>
-              )}
+                activeOpacity={0.95}
+                onPress={() => !isDone && markDone()}
+                style={StyleSheet.absoluteFill}
+              />
 
               {isDone && (
-                <TouchableOpacity
-                  onPress={unmarkDone}
-                  style={styles.devUndo}
-                  activeOpacity={0.5}
-                >
-                  <Text style={styles.devUndoText}>Undo (dev)</Text>
-                </TouchableOpacity>
+                <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 32 }]} />
               )}
+
+              <View style={styles.cardHeader}>
+                <View style={styles.sdgBadge}>
+                  <Text style={styles.sdgText}>SDG {action.sdgId}: {action.sdgTitle}</Text>
+                </View>
+
+                <TouchableOpacity
+                  onPress={handleShare}
+                  style={styles.shareButton}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="share-social-outline" size={22} color="#fff" />
+                </TouchableOpacity>
+              </View>
+
+              <Text style={styles.headline}>{action.action}</Text>
+              <Text style={styles.description}>{action.explanation}</Text>
+
+              <View style={styles.actionContainer}>
+                {!isDone ? (
+                  <>
+                    <TouchableOpacity
+                      style={styles.subtleButton}
+                      onPress={markDone}
+                      activeOpacity={0.7}
+                    >
+                      <Ionicons name="checkmark-circle-outline" size={24} color={action.color} />
+                      <Text style={[styles.subtleButtonText, { color: action.color }]}>Mark as Done</Text>
+                    </TouchableOpacity>
+
+                    {shufflesRemaining > 0 && (
+                      <TouchableOpacity
+                        style={styles.minimalShuffle}
+                        onPress={shuffle}
+                        activeOpacity={0.6}
+                      >
+                        <Ionicons name="shuffle-outline" size={20} color="rgba(255,255,255,0.7)" />
+                        <Text style={styles.minimalShuffleText}>Shuffle ({shufflesRemaining} left)</Text>
+                      </TouchableOpacity>
+                    )}
+                  </>
+                ) : (
+                  <View style={styles.doneMessage}>
+                    <View style={styles.completionAnimationContainer}>
+                      {renderParticles()}
+                      <Animated.View style={{ transform: [{ scale: popAnim }] }}>
+                        <Ionicons name="checkmark-circle" size={80} color="#fff" />
+                      </Animated.View>
+                    </View>
+                    <Animated.Text style={[styles.doneMessageText, { opacity: popAnim }]}>Great job!</Animated.Text>
+                    <Animated.Text style={[styles.availableText, { opacity: popAnim }]}>Available again tomorrow</Animated.Text>
+                  </View>
+                )}
+
+                {isDone && (
+                  <TouchableOpacity
+                    onPress={unmarkDone}
+                    style={styles.devUndo}
+                    activeOpacity={0.5}
+                  >
+                    <Text style={styles.devUndoText}>Undo (dev)</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
-          </Animated.View>
+          </View>
 
           {!isDone && (
             <Text style={styles.footerNote}>Tap the card to complete your daily impact</Text>
@@ -233,10 +259,13 @@ export default function DailyHabitScreen() {
 
       {/* HIDDEN SHAREABLE CARD - Off-screen specifically for captureRef */}
       <View style={styles.offscreenContainer} pointerEvents="none">
-        <View
-          ref={cardRef}
+        <LinearGradient
+          colors={getGradientColors(action.color)}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          ref={cardRef as any}
           collapsable={false}
-          style={[styles.mainCard, { backgroundColor: action.color, width: 350 }]}
+          style={[styles.mainCard, { width: 350 }]}
         >
           {isDone && (
             <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 32 }]} />
@@ -264,7 +293,7 @@ export default function DailyHabitScreen() {
               <Text style={styles.shareBrandingText}>Small daily actions for a better tomorrow</Text>
             </View>
           </View>
-        </View>
+        </LinearGradient>
       </View>
     </View>
   );
@@ -299,17 +328,26 @@ const styles = StyleSheet.create({
     paddingBottom: 120,
     flexGrow: 1,
   },
+  mainCardShadow: {
+    borderRadius: 32,
+    height: 560,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 8,
+    overflow: 'visible',
+  },
   mainCard: {
     borderRadius: 32,
     padding: 32,
     paddingTop: 24,
     height: 560,
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.15,
-    shadowRadius: 20,
-    elevation: 8,
+  },
+  cardContent: {
+    flex: 1,
+    justifyContent: 'center',
   },
   cardHeader: {
     flexDirection: 'row',
