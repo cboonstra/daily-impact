@@ -9,7 +9,7 @@ import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import { useFocusEffect } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Animated, Dimensions, Image, Modal, Platform, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Animated, Dimensions, Image, Linking, Modal, Platform, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 const FRIENDS = [
     { id: '1', name: 'Alex Rivers', impactCount: 42, avatar: 'https://i.pravatar.cc/150?u=alex' },
@@ -271,6 +271,38 @@ export default function ProfileScreen() {
                                     <Text style={styles.emptyStateSub}>Impact is better together. Invite friends to start your journey!</Text>
                                 </View>
                             )}
+                        </View>
+                    </Animated.View>
+                    {/* Support our Mission Section */}
+                    <Animated.View style={{
+                        opacity: fadeAnims[4],
+                        transform: [{
+                            translateY: fadeAnims[4].interpolate({
+                                inputRange: [0, 1],
+                                outputRange: [20, 0],
+                            })
+                        }]
+                    }}>
+                        <View style={styles.sectionHeader}>
+                            <Text style={[styles.sectionTitle, isDark && styles.textDark]}>Support the Mission</Text>
+                        </View>
+                        <View style={[styles.supportCard, isDark && styles.supportCardDark]}>
+                            <View style={styles.supportIconContainer}>
+                                <Text style={styles.supportEmoji}>☕</Text>
+                            </View>
+                            <View style={styles.supportTextContent}>
+                                <Text style={[styles.supportTitle, isDark && styles.textDark]}>Fuel Our Work</Text>
+                                <Text style={styles.supportDescription}>
+                                    Daily Impact is free and ad-free. If you find value in our mission, consider supporting our journey.
+                                </Text>
+                            </View>
+                            <TouchableOpacity
+                                style={styles.donateButton}
+                                onPress={() => Linking.openURL('https://ko-fi.com/dailyimpact')}
+                            >
+                                <Ionicons name="heart" size={18} color="#fff" style={{ marginRight: 6 }} />
+                                <Text style={styles.donateButtonText}>Support</Text>
+                            </TouchableOpacity>
                         </View>
                     </Animated.View>
 
@@ -1009,5 +1041,63 @@ const styles = StyleSheet.create({
     },
     cancelButtonTextDark: {
         color: '#AEA9A6',
+    },
+    supportCard: {
+        backgroundColor: '#fff',
+        borderRadius: 28,
+        padding: 20,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.05,
+        shadowRadius: 10,
+        elevation: 2,
+        borderWidth: 1,
+        borderColor: '#F2F2F7',
+    },
+    supportCardDark: {
+        backgroundColor: '#1C1C1E',
+        borderColor: '#2C2C2E',
+    },
+    supportIconContainer: {
+        width: 52,
+        height: 52,
+        borderRadius: 16,
+        backgroundColor: 'rgba(255, 149, 0, 0.1)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    supportEmoji: {
+        fontSize: 24,
+    },
+    supportTextContent: {
+        flex: 1,
+    },
+    supportTitle: {
+        fontSize: 16,
+        fontWeight: '700',
+        color: '#333',
+        marginBottom: 2,
+    },
+    supportDescription: {
+        fontSize: 12,
+        color: '#8E8E93',
+        lineHeight: 18,
+        fontWeight: '500',
+    },
+    donateButton: {
+        backgroundColor: '#3F7E44', // Using the primary green for consistency
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 12,
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    donateButtonText: {
+        color: '#fff',
+        fontSize: 13,
+        fontWeight: '700',
     },
 });

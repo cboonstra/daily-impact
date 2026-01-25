@@ -10,7 +10,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Animated, Easing, Modal, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Animated, Easing, Linking, Modal, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { captureRef } from 'react-native-view-shot';
 
@@ -350,6 +350,18 @@ export default function DailyHabitScreen() {
             <Text style={styles.missionNote}>
               "Together, we can make the world a more sustainable place, one day at a time."
             </Text>
+
+            <TouchableOpacity
+              style={[styles.featureInfoRow, isDark && styles.featureInfoRowDark, { marginTop: 20, borderLeftWidth: 4, borderLeftColor: '#3F7E44' }]}
+              onPress={() => Linking.openURL('https://ko-fi.com/dailyimpact')}
+            >
+              <Ionicons name="cafe-outline" size={24} color="#3F7E44" />
+              <View style={styles.featureInfoText}>
+                <Text style={[styles.featureInfoTitle, isDark && styles.textDark]}>Support our Mission</Text>
+                <Text style={styles.featureInfoSub}>Enjoying the app? Consider buying us a coffee to help us scale.</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color="#3F7E44" />
+            </TouchableOpacity>
           </ScrollView>
 
           <TouchableOpacity
