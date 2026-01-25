@@ -313,54 +313,46 @@ export default function DailyHabitScreen() {
           </View>
 
           <Text style={[styles.modalTitle, isDark && styles.textDark]}>About Daily Impact</Text>
-          <Text style={styles.modalSubtitle}>Small steps, big change.</Text>
+          <Text style={[styles.modalSubtitle, isDark && styles.infoTextDark, { marginBottom: 16 }]}>Small steps, big change.</Text>
 
-          <ScrollView style={styles.infoModalBody} showsVerticalScrollIndicator={false}>
-            <Text style={[styles.infoParagraph, isDark && styles.textDark]}>
-              The Sustainable Development Goals (SDGs) are grand, abstract, and can feel out of reach for individuals.
-            </Text>
-            <Text style={[styles.infoParagraph, isDark && styles.textDark]}>
-              We believe that small daily actions are underestimated. When scaled by millions of people, these simple tasks become a powerful force for global impact.
+          <ScrollView
+            style={styles.infoModalBody}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: 20 }}
+          >
+            <Text style={[styles.infoParagraph, styles.goldenSentence, isDark && styles.goldenSentenceDark]}>
+              Global goals feel too big for one person. We break them down into simple daily tasks that, when done by millions, create massive change.
             </Text>
 
-            <View style={[styles.featureInfoRow, isDark && styles.featureInfoRowDark]}>
-              <Ionicons name="card-outline" size={24} color="#3F7E44" />
-              <View style={styles.featureInfoText}>
-                <Text style={[styles.featureInfoTitle, isDark && styles.textDark]}>One Goal a Day</Text>
-                <Text style={styles.featureInfoSub}>A single, concrete action to focus your positive energy.</Text>
+            <View style={styles.compactFeatureGrid}>
+              <View style={[styles.compactFeatureItem, isDark && styles.featureInfoRowDark]}>
+                <Ionicons name="card-outline" size={24} color="#3F7E44" />
+                <View style={styles.compactFeatureText}>
+                  <Text style={[styles.compactFeatureTitle, isDark && styles.textDark]}>Focus</Text>
+                  <Text style={[styles.compactFeatureSub, isDark && styles.compactFeatureSubDark]}>One concrete action every day.</Text>
+                </View>
+              </View>
+              <View style={[styles.compactFeatureItem, isDark && styles.featureInfoRowDark]}>
+                <Ionicons name="shuffle-outline" size={24} color="#3F7E44" />
+                <View style={styles.compactFeatureText}>
+                  <Text style={[styles.compactFeatureTitle, isDark && styles.textDark]}>Freedom</Text>
+                  <Text style={[styles.compactFeatureSub, isDark && styles.compactFeatureSubDark]}>3 shuffles if today doesn't match.</Text>
+                </View>
+              </View>
+              <View style={[styles.compactFeatureItem, isDark && styles.featureInfoRowDark]}>
+                <Ionicons name="stats-chart-outline" size={24} color="#3F7E44" />
+                <View style={styles.compactFeatureText}>
+                  <Text style={[styles.compactFeatureTitle, isDark && styles.textDark]}>Growth</Text>
+                  <Text style={[styles.compactFeatureSub, isDark && styles.compactFeatureSubDark]}>Watch your impact level rise.</Text>
+                </View>
               </View>
             </View>
-
-            <View style={[styles.featureInfoRow, isDark && styles.featureInfoRowDark]}>
-              <Ionicons name="shuffle-outline" size={24} color="#3F7E44" />
-              <View style={styles.featureInfoText}>
-                <Text style={[styles.featureInfoTitle, isDark && styles.textDark]}>Flexibility</Text>
-                <Text style={styles.featureInfoSub}>Not feeling today's action? You have 3 shuffles daily to find a better fit.</Text>
-              </View>
-            </View>
-
-            <View style={[styles.featureInfoRow, isDark && styles.featureInfoRowDark]}>
-              <Ionicons name="stats-chart-outline" size={24} color="#3F7E44" />
-              <View style={styles.featureInfoText}>
-                <Text style={[styles.featureInfoTitle, isDark && styles.textDark]}>Track Progress</Text>
-                <Text style={styles.featureInfoSub}>Watch your impact grow and reach new levels as you build your streak.</Text>
-              </View>
-            </View>
-
-            <Text style={styles.missionNote}>
-              "Together, we can make the world a more sustainable place, one day at a time."
-            </Text>
 
             <TouchableOpacity
-              style={[styles.featureInfoRow, isDark && styles.featureInfoRowDark, { marginTop: 20, borderLeftWidth: 4, borderLeftColor: '#3F7E44' }]}
+              style={styles.subtleSupportLink}
               onPress={() => Linking.openURL('https://ko-fi.com/dailyimpact')}
             >
-              <Ionicons name="cafe-outline" size={24} color="#3F7E44" />
-              <View style={styles.featureInfoText}>
-                <Text style={[styles.featureInfoTitle, isDark && styles.textDark]}>Support our Mission</Text>
-                <Text style={styles.featureInfoSub}>Enjoying the app? Consider buying us a coffee to help us scale.</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={16} color="#3F7E44" />
+              <Text style={styles.subtleSupportText}>Love the mission? Support us here ☕</Text>
             </TouchableOpacity>
           </ScrollView>
 
@@ -1403,40 +1395,91 @@ const styles = StyleSheet.create({
   },
   modalIconHero: {
     alignItems: 'center',
-    marginTop: 10,
-    marginBottom: 20,
+    marginTop: 0,
+    marginBottom: 12,
   },
   infoHeroCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     backgroundColor: 'rgba(255, 215, 0, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   modalTitle: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '800',
     textAlign: 'center',
     color: '#1C1C1E',
   },
   modalSubtitle: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#8E8E93',
     textAlign: 'center',
     marginTop: 4,
-    marginBottom: 24,
+    marginBottom: 20,
     fontWeight: '600',
   },
   infoModalBody: {
-    marginBottom: 20,
+    marginBottom: 12,
   },
   infoParagraph: {
-    fontSize: 15,
-    color: '#444',
-    lineHeight: 22,
-    marginBottom: 16,
+    fontSize: 14,
+    color: '#666',
+    lineHeight: 20,
+    marginBottom: 20,
     textAlign: 'center',
+  },
+  goldenSentence: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#3A3A3C', // Softer black for light mode
+    lineHeight: 24,
+    marginBottom: 24,
+  },
+  goldenSentenceDark: {
+    color: '#AEA9A6', // Muted grey for dark mode to be less dominant than title
+  },
+  compactFeatureGrid: {
+    gap: 16,
+    marginBottom: 24,
+  },
+  compactFeatureItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8F9FA',
+    padding: 18,
+    borderRadius: 20,
+    gap: 16,
+  },
+  compactFeatureText: {
+    flex: 1,
+  },
+  compactFeatureTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#1C1C1E',
+    marginBottom: 2,
+  },
+  compactFeatureSub: {
+    fontSize: 13,
+    color: '#636366', // Slightly darker grey for less dominance in light mode
+    fontWeight: '400',
+    lineHeight: 18,
+  },
+  compactFeatureSubDark: {
+    color: '#AEA9A6', // Better contrast for readability in dark mode
+  },
+  subtleSupportLink: {
+    marginTop: 10,
+    alignItems: 'center',
+    paddingVertical: 10,
+  },
+  subtleSupportText: {
+    fontSize: 13,
+    color: '#3F7E44',
+    fontWeight: '700',
+    textDecorationLine: 'underline',
   },
   featureInfoRow: {
     flexDirection: 'row',
