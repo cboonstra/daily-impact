@@ -9,7 +9,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Animated, Easing, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Animated, Easing, Modal, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { captureRef } from 'react-native-view-shot';
 
@@ -40,6 +40,7 @@ export default function DailyHabitScreen() {
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const holdAnim = useRef(new Animated.Value(0)).current;
   const [isHolding, setIsHolding] = useState(false);
+  const [isInfoModalVisible, setIsInfoModalVisible] = useState(false);
   const holdTimeoutRef = useRef<any>(null);
 
   const getGradientColors = (baseColor: string): [string, string] => {
@@ -288,6 +289,79 @@ export default function DailyHabitScreen() {
     setViewDate(newDate);
   };
 
+  const renderInfoModal = () => (
+    <Modal
+      visible={isInfoModalVisible}
+      animationType="fade"
+      transparent={true}
+      onRequestClose={() => setIsInfoModalVisible(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={[styles.modalContent, isDark && styles.modalContentDark]}>
+          <TouchableOpacity
+            style={styles.closeModalHeaderBtn}
+            onPress={() => setIsInfoModalVisible(false)}
+          >
+            <Ionicons name="close" size={24} color={isDark ? '#fff' : '#333'} />
+          </TouchableOpacity>
+
+          <View style={styles.modalIconHero}>
+            <View style={styles.infoHeroCircle}>
+              <Ionicons name="sparkles" size={40} color="#FFD700" />
+            </View>
+          </View>
+
+          <Text style={[styles.modalTitle, isDark && styles.textDark]}>About Daily Impact</Text>
+          <Text style={styles.modalSubtitle}>Small steps, big change.</Text>
+
+          <ScrollView style={styles.infoModalBody} showsVerticalScrollIndicator={false}>
+            <Text style={[styles.infoParagraph, isDark && styles.textDark]}>
+              The Sustainable Development Goals (SDGs) are grand, abstract, and can feel out of reach for individuals.
+            </Text>
+            <Text style={[styles.infoParagraph, isDark && styles.textDark]}>
+              We believe that small daily actions are underestimated. When scaled by millions of people, these simple tasks become a powerful force for global impact.
+            </Text>
+
+            <View style={[styles.featureInfoRow, isDark && styles.featureInfoRowDark]}>
+              <Ionicons name="card-outline" size={24} color="#3F7E44" />
+              <View style={styles.featureInfoText}>
+                <Text style={[styles.featureInfoTitle, isDark && styles.textDark]}>One Goal a Day</Text>
+                <Text style={styles.featureInfoSub}>A single, concrete action to focus your positive energy.</Text>
+              </View>
+            </View>
+
+            <View style={[styles.featureInfoRow, isDark && styles.featureInfoRowDark]}>
+              <Ionicons name="shuffle-outline" size={24} color="#3F7E44" />
+              <View style={styles.featureInfoText}>
+                <Text style={[styles.featureInfoTitle, isDark && styles.textDark]}>Flexibility</Text>
+                <Text style={styles.featureInfoSub}>Not feeling today's action? You have 3 shuffles daily to find a better fit.</Text>
+              </View>
+            </View>
+
+            <View style={[styles.featureInfoRow, isDark && styles.featureInfoRowDark]}>
+              <Ionicons name="stats-chart-outline" size={24} color="#3F7E44" />
+              <View style={styles.featureInfoText}>
+                <Text style={[styles.featureInfoTitle, isDark && styles.textDark]}>Track Progress</Text>
+                <Text style={styles.featureInfoSub}>Watch your impact grow and reach new levels as you build your streak.</Text>
+              </View>
+            </View>
+
+            <Text style={styles.missionNote}>
+              "Together, we can make the world a more sustainable place, one day at a time."
+            </Text>
+          </ScrollView>
+
+          <TouchableOpacity
+            style={styles.modalPrimaryBtn}
+            onPress={() => setIsInfoModalVisible(false)}
+          >
+            <Text style={styles.modalPrimaryBtnText}>Got it!</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+
   const renderCalendar = () => {
     const today = new Date();
     const viewMonth = viewDate.getMonth();
@@ -332,22 +406,34 @@ export default function DailyHabitScreen() {
     return (
       <View style={[styles.calendarCard, isDark && styles.cardDark]}>
         <View style={styles.calendarHeader}>
-          <TouchableOpacity onPress={handlePrevMonth} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+          <TouchableOpacity onPress={handlePrevMonth} hitSlop={15} style={styles.calendarNavBtn}>
             <Ionicons name="chevron-back" size={20} color={isDark ? '#fff' : '#333'} />
           </TouchableOpacity>
           <Text style={[styles.monthTitle, isDark && styles.textDark]}>{monthName} {viewYear}</Text>
-          <TouchableOpacity onPress={handleNextMonth} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+          <TouchableOpacity onPress={handleNextMonth} hitSlop={15} style={styles.calendarNavBtn}>
             <Ionicons name="chevron-forward" size={20} color={isDark ? '#fff' : '#333'} />
           </TouchableOpacity>
         </View>
+
         <View style={styles.weekDays}>
-          {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, index) => (
+          {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, index) => (
             <Text key={`${day}-${index}`} style={[styles.weekDayText, isDark && styles.weekDayTextDark]}>{day}</Text>
           ))}
         </View>
-        <View style={styles.calendarGrid}>
-          {days}
-        </View>
+
+        {Object.keys(history).length === 0 ? (
+          <View style={styles.calendarEmptyState}>
+            <View style={styles.emptyIconContainer}>
+              <Ionicons name="calendar-outline" size={32} color={isDark ? '#3A3A3C' : '#E5E5EA'} />
+            </View>
+            <Text style={[styles.emptyStateTitle, isDark && styles.textDark]}>Your journey begins</Text>
+            <Text style={styles.emptyStateSub}>Complete your first action to start tracking your impact history.</Text>
+          </View>
+        ) : (
+          <View style={styles.calendarGrid}>
+            {days}
+          </View>
+        )}
       </View>
     );
   };
@@ -366,7 +452,7 @@ export default function DailyHabitScreen() {
           style={styles.headerInfoButton}
           onPress={async () => {
             await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            // Future info action
+            setIsInfoModalVisible(true);
           }}
         >
           <Ionicons name="information-circle-outline" size={24} color={isDark ? '#fff' : '#333'} />
@@ -640,6 +726,7 @@ export default function DailyHabitScreen() {
           </View>
         </LinearGradient>
       </View>
+      {renderInfoModal()}
     </View>
   );
 }
@@ -1128,6 +1215,35 @@ const styles = StyleSheet.create({
   weekDayTextDark: {
     color: '#8E8E93',
   },
+  calendarNavBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: 'rgba(0,0,0,0.03)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  calendarEmptyState: {
+    paddingVertical: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyIconContainer: {
+    marginBottom: 12,
+  },
+  emptyStateTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#333',
+    marginBottom: 4,
+  },
+  emptyStateSub: {
+    fontSize: 13,
+    color: '#8E8E93',
+    textAlign: 'center',
+    paddingHorizontal: 40,
+    lineHeight: 18,
+  },
   calendarGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -1159,7 +1275,7 @@ const styles = StyleSheet.create({
   },
   dayText: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#333',
   },
   dayTextToday: {
@@ -1185,5 +1301,129 @@ const styles = StyleSheet.create({
   particle: {
     position: 'absolute',
     fontSize: 24,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 36,
+    width: '100%',
+    maxHeight: '85%',
+    padding: 28,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 5,
+  },
+  modalContentDark: {
+    backgroundColor: '#1C1C1E',
+    borderColor: 'rgba(255,255,255,0.05)',
+    borderWidth: 1,
+  },
+  closeModalHeaderBtn: {
+    position: 'absolute',
+    top: 20,
+    right: 20,
+    zIndex: 10,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(0,0,0,0.02)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalIconHero: {
+    alignItems: 'center',
+    marginTop: 10,
+    marginBottom: 20,
+  },
+  infoHeroCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(255, 215, 0, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: '800',
+    textAlign: 'center',
+    color: '#1C1C1E',
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: '#8E8E93',
+    textAlign: 'center',
+    marginTop: 4,
+    marginBottom: 24,
+    fontWeight: '600',
+  },
+  infoModalBody: {
+    marginBottom: 20,
+  },
+  infoParagraph: {
+    fontSize: 15,
+    color: '#444',
+    lineHeight: 22,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  featureInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 20,
+    marginBottom: 12,
+    gap: 16,
+  },
+  featureInfoRowDark: {
+    backgroundColor: '#2C2C2E',
+  },
+  featureInfoText: {
+    flex: 1,
+  },
+  featureInfoTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1C1C1E',
+    marginBottom: 2,
+  },
+  featureInfoSub: {
+    fontSize: 13,
+    color: '#8E8E93',
+    lineHeight: 18,
+  },
+  missionNote: {
+    fontSize: 14,
+    fontStyle: 'italic',
+    color: '#3F7E44',
+    textAlign: 'center',
+    marginTop: 12,
+    paddingHorizontal: 20,
+    lineHeight: 20,
+    fontWeight: '600',
+  },
+  modalPrimaryBtn: {
+    backgroundColor: '#3F7E44',
+    paddingVertical: 16,
+    borderRadius: 20,
+    alignItems: 'center',
+    shadowColor: '#3F7E44',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  modalPrimaryBtnText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
   },
 });

@@ -240,27 +240,39 @@ export default function ProfileScreen() {
                         </View>
 
                         <View style={[styles.friendsCard, isDark && styles.cardDark]}>
-                            {FRIENDS.map((friend, index) => (
-                                <View key={friend.id} style={[
-                                    styles.friendItem,
-                                    index !== FRIENDS.length - 1 && styles.friendDivider,
-                                    index !== FRIENDS.length - 1 && isDark && styles.friendDividerDark
-                                ]}>
-                                    <Image source={{ uri: friend.avatar }} style={styles.friendAvatar} />
-                                    <View style={styles.friendInfo}>
-                                        <Text style={[styles.friendName, isDark && styles.textDark]}>{friend.name}</Text>
-                                        <Text style={[styles.friendSubtext, isDark && styles.profileBioDark]}>{friend.impactCount} {friend.impactCount === 1 ? 'impact' : 'impacts'} completed</Text>
+                            {FRIENDS.length > 0 ? (
+                                FRIENDS.map((friend, index) => (
+                                    <View key={friend.id} style={[
+                                        styles.friendItem,
+                                        index !== FRIENDS.length - 1 && styles.friendDivider,
+                                        index !== FRIENDS.length - 1 && isDark && styles.friendDividerDark
+                                    ]}>
+                                        <Image source={{ uri: friend.avatar }} style={styles.friendAvatar} />
+                                        <View style={styles.friendInfo}>
+                                            <Text style={[styles.friendName, isDark && styles.textDark]}>{friend.name}</Text>
+                                            <Text style={[styles.friendSubtext, isDark && styles.profileBioDark]}>
+                                                {friend.impactCount} {friend.impactCount === 1 ? 'impact' : 'impacts'} completed
+                                            </Text>
+                                        </View>
+                                        <TouchableOpacity
+                                            style={[styles.waveButton, isDark && styles.waveButtonDark]}
+                                            onPress={async () => {
+                                                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                            }}
+                                        >
+                                            <Text style={styles.waveEmoji}>👋</Text>
+                                        </TouchableOpacity>
                                     </View>
-                                    <TouchableOpacity
-                                        style={[styles.waveButton, isDark && styles.waveButtonDark]}
-                                        onPress={async () => {
-                                            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                        }}
-                                    >
-                                        <Text style={styles.waveEmoji}>👋</Text>
-                                    </TouchableOpacity>
+                                ))
+                            ) : (
+                                <View style={styles.emptyStateContainer}>
+                                    <View style={styles.emptyCircle}>
+                                        <Ionicons name="people-outline" size={32} color={isDark ? '#3A3A3C' : '#E5E5EA'} />
+                                    </View>
+                                    <Text style={[styles.emptyStateTitle, isDark && styles.textDark]}>No friends yet</Text>
+                                    <Text style={styles.emptyStateSub}>Impact is better together. Invite friends to start your journey!</Text>
                                 </View>
-                            ))}
+                            )}
                         </View>
                     </Animated.View>
 
@@ -606,16 +618,9 @@ const styles = StyleSheet.create({
         marginBottom: 32,
     },
     cardDark: {
-        backgroundColor: '#1E1E1E',
-        shadowOpacity: 0.2,
-        ...Platform.select({
-            ios: {
-                shadowColor: '#000',
-            },
-            android: {
-                elevation: 5,
-            },
-        }),
+        backgroundColor: '#1C1C1E',
+        borderColor: 'rgba(255,255,255,0.05)',
+        borderWidth: 1,
     },
     friendItem: {
         flexDirection: 'row',
@@ -661,6 +666,33 @@ const styles = StyleSheet.create({
     },
     waveEmoji: {
         fontSize: 16,
+    },
+    emptyStateContainer: {
+        paddingVertical: 40,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    emptyCircle: {
+        width: 64,
+        height: 64,
+        borderRadius: 32,
+        backgroundColor: 'rgba(0,0,0,0.02)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 16,
+    },
+    emptyStateTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: '#1C1C1E',
+        marginBottom: 8,
+    },
+    emptyStateSub: {
+        fontSize: 14,
+        color: '#8E8E93',
+        textAlign: 'center',
+        paddingHorizontal: 40,
+        lineHeight: 20,
     },
     detailsCard: {
         backgroundColor: '#fff',

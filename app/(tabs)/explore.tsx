@@ -276,7 +276,7 @@ export default function HomeScreen() {
                   <View style={styles.detailHero}>
                     <View style={styles.detailHeaderInfo}>
                       <Text style={styles.detailNumber}>{selectedSdg.id}</Text>
-                      <View>
+                      <View style={styles.detailHeaderTextContainer}>
                         <Text style={styles.detailTitleSmall}>SUSTAINABLE DEVELOPMENT</Text>
                         <Text style={styles.detailTitleLarge}>GOAL</Text>
                       </View>
@@ -286,37 +286,38 @@ export default function HomeScreen() {
                     <Text style={styles.detailDescriptionWhite}>
                       {selectedSdg.description}
                     </Text>
-
                   </View>
 
                   <View style={[styles.actionsSection, isDark && styles.actionsSectionDark]}>
                     <Text style={[styles.actionsHeader, isDark && styles.textDark]}>What you can do</Text>
-                    {SDG_ACTIONS.filter(a => a.sdgId === selectedSdg.id).map((action, index) => (
-                      <Animated.View
-                        key={action.id}
-                        style={[
-                          styles.actionCard,
-                          isDark && styles.actionCardDark,
-                          {
-                            opacity: fadeAnim,
-                            transform: [{
-                              translateY: fadeAnim.interpolate({
-                                inputRange: [0, 1],
-                                outputRange: [20 + (index * 10), 0],
-                              })
-                            }]
-                          }
-                        ]}
-                      >
-                        <View style={[styles.actionIconContainer, isDark && styles.actionIconContainerDark]}>
-                          <Ionicons name="flash" size={20} color={selectedSdg.color} />
-                        </View>
-                        <View style={styles.actionContent}>
-                          <Text style={[styles.actionTitle, isDark && styles.textDark]}>{action.action}</Text>
-                          <Text style={[styles.actionExplanation, isDark && styles.infoTextDark]}>{action.explanation}</Text>
-                        </View>
-                      </Animated.View>
-                    ))}
+                    <View style={styles.actionCardsContainer}>
+                      {SDG_ACTIONS.filter(a => a.sdgId === selectedSdg.id).map((action, index) => (
+                        <Animated.View
+                          key={action.id}
+                          style={[
+                            styles.actionCard,
+                            isDark && styles.actionCardDark,
+                            {
+                              opacity: fadeAnim,
+                              transform: [{
+                                translateY: fadeAnim.interpolate({
+                                  inputRange: [0, 1],
+                                  outputRange: [30 + (index * 15), 0],
+                                })
+                              }]
+                            }
+                          ]}
+                        >
+                          <View style={[styles.actionIconContainer, { backgroundColor: selectedSdg.color + '15' }]}>
+                            <Ionicons name="flash" size={18} color={selectedSdg.color} />
+                          </View>
+                          <View style={styles.actionContent}>
+                            <Text style={[styles.actionTitle, isDark && styles.textDark]}>{action.action}</Text>
+                            <Text style={[styles.actionExplanation, isDark && styles.infoTextDark]}>{action.explanation}</Text>
+                          </View>
+                        </Animated.View>
+                      ))}
+                    </View>
                   </View>
                 </ScrollView>
               </View>
@@ -487,11 +488,15 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.5)',
     lineHeight: 72,
   },
+  detailHeaderTextContainer: {
+    gap: -4,
+  },
   detailTitleSmall: {
     fontSize: 12,
     fontWeight: '800',
-    color: 'rgba(255,255,255,0.8)',
+    color: 'rgba(255,255,255,0.85)',
     letterSpacing: 2,
+    textTransform: 'uppercase',
   },
   detailTitleLarge: {
     fontSize: 40,
@@ -501,10 +506,11 @@ const styles = StyleSheet.create({
   },
   sdgMainTitle: {
     fontSize: 28,
-    fontWeight: '700',
+    fontWeight: '800',
     color: '#fff',
-    marginTop: 10,
-    marginBottom: 15,
+    marginTop: 12,
+    marginBottom: 16,
+    letterSpacing: -0.5,
   },
   detailDescriptionWhite: {
     fontSize: 16,
@@ -515,68 +521,64 @@ const styles = StyleSheet.create({
   },
   actionsSection: {
     backgroundColor: '#fff',
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    marginTop: -20,
+    borderTopLeftRadius: 36,
+    borderTopRightRadius: 36,
+    marginTop: -30,
     padding: 24,
-    minHeight: 400,
+    paddingTop: 32,
+    minHeight: 500,
   },
   actionsSectionDark: {
-    backgroundColor: '#1E1E1E',
+    backgroundColor: '#1C1C1E', // Curated Dark Blue-Grey
+  },
+  actionCardsContainer: {
+    gap: 12,
   },
   actionsHeader: {
     fontSize: 22,
     fontWeight: '800',
     color: '#1C1C1E',
     marginBottom: 20,
+    letterSpacing: -0.5,
   },
   textDark: {
     color: '#F2F2F7',
   },
+  actionContent: {
+    flex: 1,
+  },
   actionCard: {
     flexDirection: 'row',
     backgroundColor: '#F8F9FA',
-    borderRadius: 20,
-    padding: 16,
-    marginBottom: 16,
+    borderRadius: 24,
+    padding: 18,
     alignItems: 'flex-start',
     borderWidth: 1,
     borderColor: '#F1F3F5',
   },
   actionCardDark: {
     backgroundColor: '#2C2C2E',
-    borderColor: '#3A3A3C',
+    borderColor: 'rgba(255,255,255,0.05)',
   },
   actionIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: '#fff',
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
-    elevation: 2,
-  },
-  actionIconContainerDark: {
-    backgroundColor: '#1C1C1E',
-  },
-  actionContent: {
-    flex: 1,
   },
   actionTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     color: '#1C1C1E',
-    marginBottom: 4,
+    marginBottom: 6,
+    lineHeight: 22,
   },
   actionExplanation: {
     fontSize: 14,
     color: '#636E72',
-    lineHeight: 20,
+    lineHeight: 21,
   },
   infoBox: {
     flexDirection: 'row',
