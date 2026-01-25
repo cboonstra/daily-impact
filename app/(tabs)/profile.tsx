@@ -4,6 +4,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useImpactHistory } from '@/hooks/useImpactHistory';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import { useFocusEffect } from 'expo-router';
@@ -123,7 +124,11 @@ export default function ProfileScreen() {
 
     return (
         <View style={[styles.container, isDark && styles.containerDark]}>
-            <View style={[styles.header, isDark && styles.headerDark]}>
+            <BlurView
+                intensity={80}
+                tint={isDark ? 'dark' : 'light'}
+                style={[styles.header, isDark && styles.headerDark]}
+            >
                 <View style={{ width: 32 }} />
                 <Text style={[styles.headerTitle, isDark && styles.headerTitleDark]}>Profile</Text>
                 <TouchableOpacity
@@ -138,9 +143,15 @@ export default function ProfileScreen() {
                 >
                     <Ionicons name="settings-outline" size={24} color={isDark ? '#fff' : '#333'} />
                 </TouchableOpacity>
-            </View>
+            </BlurView>
 
-            <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+            <ScrollView
+                contentContainerStyle={[
+                    styles.scrollContent,
+                    { paddingTop: Platform.OS === 'ios' ? 120 : 100 }
+                ]}
+                showsVerticalScrollIndicator={false}
+            >
                 <View style={{ flex: 1 }}>
                     {/* Profile Brief */}
                     <Animated.View style={[
@@ -449,13 +460,16 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 100,
         borderBottomWidth: 1,
-        borderBottomColor: '#f0f0f0',
-        backgroundColor: '#fff',
+        borderBottomColor: 'rgba(0,0,0,0.05)',
     },
     headerDark: {
-        backgroundColor: '#1E1E1E',
-        borderBottomColor: '#2C2C2E',
+        borderBottomColor: 'rgba(255,255,255,0.1)',
     },
     headerTitle: {
         fontSize: 22,

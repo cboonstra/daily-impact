@@ -1,10 +1,11 @@
 import { SDG_ACTIONS } from '@/constants/sdgActions';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Dimensions, Modal, PanResponder, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Animated, Dimensions, Modal, PanResponder, Platform, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -188,13 +189,30 @@ export default function HomeScreen() {
   return (
     <View style={[styles.container, isDark && styles.containerDark]}>
       {/* Header */}
-      <View style={[styles.header, isDark && styles.headerDark]}>
+      <BlurView
+        intensity={80}
+        tint={isDark ? 'dark' : 'light'}
+        style={[styles.header, isDark && styles.headerDark]}
+      >
         <View style={{ width: 32 }} />
         <Text style={[styles.headerTitle, isDark && styles.headerTitleDark]}>SDGs</Text>
-        <View style={{ width: 32 }} />
-      </View>
+        <TouchableOpacity
+          style={styles.headerInfoButton}
+          onPress={async () => {
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          }}
+        >
+          <Ionicons name="search-outline" size={24} color={isDark ? '#fff' : '#333'} />
+        </TouchableOpacity>
+      </BlurView>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingTop: Platform.OS === 'ios' ? 120 : 100 }
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={{ flex: 1 }}>
           <View style={styles.grid}>
             {SDGS.map((sdg, index) => renderSdgTile(sdg, index))}
@@ -265,22 +283,6 @@ export default function HomeScreen() {
                       {selectedSdg.description}
                     </Text>
 
-                    <View style={styles.statsRow}>
-                      <View style={styles.statItem}>
-                        <Text style={styles.statValue}>{selectedSdg.targets}</Text>
-                        <Text style={styles.statLabel}>Targets</Text>
-                      </View>
-                      <View style={styles.statDivider} />
-                      <View style={styles.statItem}>
-                        <Text style={styles.statValue}>{selectedSdg.publications}</Text>
-                        <Text style={styles.statLabel}>Pubs</Text>
-                      </View>
-                      <View style={styles.statDivider} />
-                      <View style={styles.statItem}>
-                        <Text style={styles.statValue}>{selectedSdg.actions}</Text>
-                        <Text style={styles.statLabel}>Actions</Text>
-                      </View>
-                    </View>
                   </View>
 
                   <View style={[styles.actionsSection, isDark && styles.actionsSectionDark]}>
@@ -336,13 +338,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 100,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: 'rgba(0,0,0,0.05)',
   },
   headerDark: {
-    backgroundColor: '#1E1E1E',
-    borderBottomColor: '#2C2C2E',
+    borderBottomColor: 'rgba(255,255,255,0.1)',
+  },
+  headerInfoButton: {
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headerTitle: {
     fontSize: 22,
@@ -493,35 +505,6 @@ const styles = StyleSheet.create({
     opacity: 0.9,
     lineHeight: 24,
     marginBottom: 30,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    borderRadius: 20,
-    padding: 20,
-    marginTop: 10,
-  },
-  statItem: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  statValue: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#fff',
-  },
-  statLabel: {
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.7)',
-    fontWeight: '600',
-    marginTop: 2,
-  },
-  statDivider: {
-    width: 1,
-    height: 30,
-    backgroundColor: 'rgba(255,255,255,0.2)',
   },
   actionsSection: {
     backgroundColor: '#fff',

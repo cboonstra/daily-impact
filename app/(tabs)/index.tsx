@@ -3,12 +3,13 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useDailyImpact } from '@/hooks/useDailyImpact';
 import { useImpactHistory } from '@/hooks/useImpactHistory';
 import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Animated, Easing, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Animated, Easing, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { captureRef } from 'react-native-view-shot';
 
 const AnimatedGradient = Animated.createAnimatedComponent(LinearGradient);
@@ -292,13 +293,31 @@ export default function DailyHabitScreen() {
   return (
     <View style={[styles.container, isDark && styles.containerDark]}>
       {/* Header */}
-      <View style={[styles.header, isDark && styles.headerDark]}>
+      <BlurView
+        intensity={80}
+        tint={isDark ? 'dark' : 'light'}
+        style={[styles.header, isDark && styles.headerDark]}
+      >
         <View style={{ width: 32 }} />
         <Text style={[styles.headerTitle, isDark && styles.headerTitleDark]}>Impact Dashboard</Text>
-        <View style={{ width: 32 }} />
-      </View>
+        <TouchableOpacity
+          style={styles.headerInfoButton}
+          onPress={async () => {
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            // Future info action
+          }}
+        >
+          <Ionicons name="information-circle-outline" size={24} color={isDark ? '#fff' : '#333'} />
+        </TouchableOpacity>
+      </BlurView>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingTop: Platform.OS === 'ios' ? 120 : 100 } // Allowance for the glass header
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
         <View>
           <View style={styles.mainCardShadow}>
             {/* Previous Gradient (as base) */}
@@ -457,7 +476,7 @@ export default function DailyHabitScreen() {
           </View>
 
           {/* Impact Calendar */}
-          <View style={{ marginTop: 8 }}>
+          <View>
             <View style={styles.sectionHeader}>
               <Text style={[styles.sectionTitle, isDark && styles.textDark]}>Impact History</Text>
             </View>
@@ -534,14 +553,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#fff',
+    justifyContent: 'space-between',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 100,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: 'rgba(0,0,0,0.05)',
   },
   headerDark: {
-    backgroundColor: '#1E1E1E',
-    borderBottomColor: '#2C2C2E',
+    borderBottomColor: 'rgba(255,255,255,0.1)',
+  },
+  headerInfoButton: {
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headerTitle: {
     fontSize: 22,
@@ -670,7 +698,6 @@ const styles = StyleSheet.create({
   },
   dashboardInfo: {
     gap: 16,
-    marginBottom: 40,
   },
   weeklyContainer: {
     backgroundColor: '#fff',
@@ -857,13 +884,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: 20,
+    padding: 20,
     marginTop: 32,
     marginBottom: 10,
     gap: 12,
     borderWidth: 1,
     borderColor: '#f0f0f0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
   },
   infoBoxDark: {
     backgroundColor: '#1E1E1E',
