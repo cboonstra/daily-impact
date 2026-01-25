@@ -24,7 +24,8 @@ const DEFAULT_AVATAR = 'https://i.pravatar.cc/150?u=lotte';
 
 // LEVEL_SYSTEM moved to constants/levels.ts
 
-const FriendRow = ({ friend, isDark, isLast }: { friend: typeof FRIENDS[0], isDark: boolean, isLast: boolean }) => {
+
+const FriendRow = ({ friend, isDark, isLast, onPress }: { friend: typeof FRIENDS[0], isDark: boolean, isLast: boolean, onPress: () => void }) => {
     const scaleAnim = useRef(new Animated.Value(1)).current;
 
     const handleWave = async () => {
@@ -41,13 +42,19 @@ const FriendRow = ({ friend, isDark, isLast }: { friend: typeof FRIENDS[0], isDa
             !isLast && styles.friendDivider,
             !isLast && isDark && styles.friendDividerDark
         ]}>
-            <Image source={{ uri: friend.avatar }} style={styles.friendAvatar} />
-            <View style={styles.friendInfo}>
-                <Text style={[styles.friendName, isDark && styles.textDark]}>{friend.name}</Text>
-                <Text style={[styles.friendSubtext, isDark && styles.profileBioDark]}>
-                    {friend.impactCount} {friend.impactCount === 1 ? 'impact' : 'impacts'} completed
-                </Text>
-            </View>
+            <TouchableOpacity
+                style={styles.friendContentContainer}
+                onPress={onPress}
+                activeOpacity={0.7}
+            >
+                <Image source={{ uri: friend.avatar }} style={styles.friendAvatar} />
+                <View style={styles.friendInfo}>
+                    <Text style={[styles.friendName, isDark && styles.textDark]}>{friend.name}</Text>
+                    <Text style={[styles.friendSubtext, isDark && styles.profileBioDark]}>
+                        {friend.impactCount} {friend.impactCount === 1 ? 'impact' : 'impacts'} completed
+                    </Text>
+                </View>
+            </TouchableOpacity>
             <TouchableOpacity onPress={handleWave} activeOpacity={0.6}>
                 <Animated.View style={[
                     styles.waveButton,
@@ -70,6 +77,7 @@ export default function ProfileScreen() {
     const [profileImage, setProfileImage] = useState(DEFAULT_AVATAR);
     const [isLevelModalVisible, setIsLevelModalVisible] = useState(false);
     const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+    const [selectedFriend, setSelectedFriend] = useState<typeof FRIENDS[0] | null>(null);
     const [viewDate, setViewDate] = useState(new Date());
 
     // Form state
@@ -321,6 +329,7 @@ export default function ProfileScreen() {
                                         friend={friend}
                                         isDark={isDark}
                                         isLast={index === FRIENDS.length - 1}
+                                        onPress={() => setSelectedFriend(friend)}
                                     />
                                 ))
                             ) : (
@@ -649,6 +658,83 @@ export default function ProfileScreen() {
                     </View>
                 </View>
             </Modal >
+
+
+            {/* Friend Profile Modal */}
+            <Modal
+                visible={!!selectedFriend}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setSelectedFriend(null)}
+            >
+                <TouchableOpacity
+                    style={styles.modalOverlay}
+                    activeOpacity={1}
+                    onPress={() => setSelectedFriend(null)}
+                >
+                    <View style={[styles.modalContent, isDark && styles.modalContentDark, { alignItems: 'center' }]}>
+                        {selectedFriend && (
+                            <>
+                                <View style={styles.modalHeader}>
+                                    <Image source={{ uri: selectedFriend.avatar }} style={styles.avatar} />
+                                </View>
+
+                                <Text style={[styles.profileName, isDark && styles.textDark, { marginBottom: 8 }]}>
+                                    {selectedFriend.name}
+                                </Text>
+
+                                <Text style={[styles.profileBio, isDark && styles.profileBioDark, { marginBottom: 24 }]}>
+                                    Making an impact one day at a time. 🌱
+                                </Text>
+
+                                <View style={[styles.statsGrid, { marginBottom: 24 }]}>
+                                    <View style={[styles.statCard, isDark && styles.statCardDark, { backgroundColor: isDark ? '#2C2C2E' : '#F8F9FA', elevation: 0, shadowOpacity: 0 }]}>
+                                        <View style={[styles.statIconContainer, { backgroundColor: '#E8F5E9' }]}>
+                                            <Ionicons name="leaf" size={20} color="#3F7E44" />
+                                        </View>
+                                        <Text style={[styles.statValue, isDark && styles.textDark]}>{selectedFriend.impactCount}</Text>
+                                        <Text style={styles.statLabel}>Impacts</Text>
+                                    </View>
+
+                                    <View style={[styles.statCard, isDark && styles.statCardDark, { backgroundColor: isDark ? '#2C2C2E' : '#F8F9FA', elevation: 0, shadowOpacity: 0 }]}>
+                                        <View style={[styles.statIconContainer, { backgroundColor: '#FFF3E0' }]}>
+                                            <Ionicons name="flame" size={20} color="#F57C00" />
+                                        </View>
+                                        <Text style={[styles.statValue, isDark && styles.textDark]}>{Math.floor(selectedFriend.impactCount / 1.5)}</Text>
+                                        <Text style={styles.statLabel}>Streak</Text>
+                                    </View>
+
+                                    {(() => {
+                                        const friendLevel = [...LEVEL_SYSTEM].reverse().find(l => selectedFriend.impactCount >= l.impacts) || LEVEL_SYSTEM[0];
+                                        return (
+                                            <View style={[styles.statCard, isDark && styles.statCardDark, { backgroundColor: isDark ? '#2C2C2E' : '#F8F9FA', elevation: 0, shadowOpacity: 0 }]}>
+                                                <View style={[styles.statIconContainer, { backgroundColor: friendLevel.color + '20' }]}>
+                                                    <Ionicons name={friendLevel.icon as any} size={20} color={friendLevel.color} />
+                                                </View>
+                                                <Text style={[styles.statValue, isDark && styles.textDark]}>{friendLevel.level}</Text>
+                                                <Text style={styles.statLabel}>Level</Text>
+                                            </View>
+                                        );
+                                    })()}
+                                </View>
+
+                                <TouchableOpacity
+                                    style={[styles.waveButton, isDark && styles.waveButtonDark, { width: 140, height: 44, borderRadius: 22, flexDirection: 'row', gap: 8 }]}
+                                    onPress={async () => {
+                                        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                        // Close modal after wave? Or just give feedback? 
+                                        // Let's just give feedback for now
+                                        Alert.alert("Waved!", `You waved at ${selectedFriend.name} 👋`);
+                                    }}
+                                >
+                                    <Text style={styles.waveEmoji}>👋</Text>
+                                    <Text style={[styles.detailValue, isDark && styles.textDark, { marginTop: 0 }]}>Wave</Text>
+                                </TouchableOpacity>
+                            </>
+                        )}
+                    </View>
+                </TouchableOpacity>
+            </Modal>
         </View >
     );
 }
@@ -723,6 +809,9 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.5,
         shadowRadius: 8,
         elevation: 2,
+    },
+    statCardDark: {
+        backgroundColor: '#1C1C1E',
     },
     statIconContainer: {
         width: 36,
@@ -835,6 +924,11 @@ const styles = StyleSheet.create({
     },
     friendDividerDark: {
         borderBottomColor: '#2C2C2E',
+    },
+    friendContentContainer: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
     },
     friendAvatar: {
         width: 48,
