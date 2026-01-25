@@ -19,7 +19,7 @@ const AnimatedGradient = Animated.createAnimatedComponent(LinearGradient);
 export default function DailyHabitScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
-  const { action, isDone, shufflesRemaining, isLoading, shuffle, markDone, unmarkDone, completedSdgIds } = useDailyImpact();
+  const { action, isDone, shufflesRemaining, isLoading, shuffle, markDone, unmarkDone, completedSdgIds, profile } = useDailyImpact();
   const { history, getStats, refreshHistory } = useImpactHistory();
   const { total, streak } = getStats();
   const cardRef = useRef<View>(null);
@@ -730,7 +730,6 @@ export default function DailyHabitScreen() {
         </View>
       </ScrollView>
 
-      {/* HIDDEN SHAREABLE CARD - Off-screen specifically for captureRef */}
       <View style={styles.offscreenContainer} pointerEvents="none">
         <LinearGradient
           colors={getGradientColors(action.color)}
@@ -738,32 +737,42 @@ export default function DailyHabitScreen() {
           end={{ x: 1, y: 1 }}
           ref={cardRef as any}
           collapsable={false}
-          style={[styles.mainCard, { width: 350 }]}
+          style={[styles.mainCard, styles.shareCardFixed]}
         >
-          {isDone && (
-            <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 32 }]} />
-          )}
+          {/* Decorative Background Element */}
+          <View style={styles.shareDecorativeIcon}>
+            <Ionicons name={action.sdgId === 13 ? "leaf" : "globe-outline"} size={280} color="rgba(255,255,255,0.08)" />
+          </View>
 
           <View style={styles.cardHeader}>
             <View style={styles.sdgBadge}>
               <Text style={styles.sdgText}>SDG {action.sdgId}: {action.sdgTitle}</Text>
             </View>
+            <View style={styles.shareBadge}>
+              <Ionicons name="sparkles" size={14} color="#FFD700" />
+              <Text style={styles.shareBadgeText}>DAILY IMPACT</Text>
+            </View>
           </View>
 
-          <Text style={styles.headline}>{action.action}</Text>
-          <Text style={styles.description}>{action.explanation}</Text>
+          <View style={styles.shareContent}>
+            <Text style={styles.shareHeadline}>{action.action}</Text>
+            <Text style={styles.shareDescription}>{action.explanation}</Text>
+          </View>
 
-          <View style={styles.actionContainer}>
-            {isDone && (
-              <View style={styles.doneMessage}>
-                <Ionicons name="checkmark-circle" size={48} color="#fff" />
-                <Text style={styles.doneMessageText}>Great job!</Text>
+          <View style={styles.shareFooter}>
+            <View style={styles.shareUserRow}>
+              <View style={styles.shareAvatarPlaceholder}>
+                <Text style={styles.shareAvatarText}>{profile.name.charAt(0)}</Text>
               </View>
-            )}
+              <View>
+                <Text style={styles.shareUserName}>{profile.name}</Text>
+                <Text style={styles.shareDate}>{new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</Text>
+              </View>
+            </View>
 
-            <View style={styles.shareBranding}>
-              <Text style={styles.shareBrandingTitle}>Daily Impact</Text>
-              <Text style={styles.shareBrandingText}>Small daily actions for a better tomorrow</Text>
+            <View style={styles.shareLogoContainer}>
+              <Text style={styles.shareLogoTitle}>DAILY IMPACT</Text>
+              <Text style={styles.shareLogoSub}>Small steps, big change.</Text>
             </View>
           </View>
         </LinearGradient>
@@ -1505,6 +1514,107 @@ const styles = StyleSheet.create({
   medalStatusText: {
     fontSize: 11,
     color: '#8E8E93',
+    fontWeight: '600',
+  },
+  shareCardFixed: {
+    width: 400,
+    height: 600,
+    padding: 36,
+  },
+  shareDecorativeIcon: {
+    position: 'absolute',
+    top: 100,
+    right: -60,
+    opacity: 1,
+    transform: [{ rotate: '-15deg' }],
+  },
+  shareBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(0,0,0,0.15)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 99,
+  },
+  shareBadgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 1.5,
+  },
+  shareContent: {
+    flex: 1,
+    justifyContent: 'center',
+    marginTop: -40,
+  },
+  shareHeadline: {
+    fontSize: 36,
+    fontWeight: '900',
+    color: '#fff',
+    lineHeight: 44,
+    marginBottom: 16,
+    textShadowColor: 'rgba(0,0,0,0.15)',
+    textShadowOffset: { width: 0, height: 4 },
+    textShadowRadius: 10,
+  },
+  shareDescription: {
+    fontSize: 18,
+    color: 'rgba(255,255,255,0.95)',
+    lineHeight: 28,
+    fontWeight: '600',
+  },
+  shareFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.2)',
+    paddingTop: 24,
+  },
+  shareUserRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  shareAvatarPlaceholder: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+  shareAvatarText: {
+    color: '#fff',
+    fontWeight: '800',
+    fontSize: 18,
+  },
+  shareUserName: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  shareDate: {
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  shareLogoContainer: {
+    alignItems: 'flex-end',
+  },
+  shareLogoTitle: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '900',
+    letterSpacing: 1,
+  },
+  shareLogoSub: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 10,
     fontWeight: '600',
   },
 });

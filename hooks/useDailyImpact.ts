@@ -9,7 +9,8 @@ export function useDailyImpact() {
         shuffle,
         markDone,
         unmarkDone,
-        completedSdgIds
+        completedSdgIds,
+        profile
     } = useImpact();
 
     return {
@@ -21,5 +22,6 @@ export function useDailyImpact() {
         markDone,
         unmarkDone,
         completedSdgIds,
+        profile
     };
 }
