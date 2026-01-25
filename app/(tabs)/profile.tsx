@@ -74,18 +74,6 @@ export default function ProfileScreen() {
         loadProfileImage();
     }, []);
 
-    const handlePrevMonth = () => {
-        const newDate = new Date(viewDate);
-        newDate.setMonth(newDate.getMonth() - 1);
-        setViewDate(newDate);
-    };
-
-    const handleNextMonth = () => {
-        const newDate = new Date(viewDate);
-        newDate.setMonth(newDate.getMonth() + 1);
-        setViewDate(newDate);
-    };
-
     const pickImage = async () => {
         const result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ['images'],
@@ -131,79 +119,6 @@ export default function ProfileScreen() {
         } catch (error: any) {
             Alert.alert('Error', error.message);
         }
-    };
-
-    const renderCalendar = () => {
-        const today = new Date();
-        const viewMonth = viewDate.getMonth();
-        const viewYear = viewDate.getFullYear();
-
-        const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
-        const firstDayOfMonth = new Date(viewYear, viewMonth, 1).getDay();
-
-        const monthName = viewDate.toLocaleString('default', { month: 'long' });
-
-        // Adjusted for Monday start (0=Sun, 1=Mon... -> 0=Mon, 1=Tue... 6=Sun)
-        const adjustedFirstDay = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1;
-
-        const days = [];
-        // Padding for first week
-        for (let i = 0; i < adjustedFirstDay; i++) {
-            days.push(<View key={`pad-${i}`} style={styles.calendarDayEmpty} />);
-        }
-
-        // Days of the month
-        for (let d = 1; d <= daysInMonth; d++) {
-            const dateStr = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-            const isCompleted = history[dateStr];
-            const isToday = d === today.getDate() && viewMonth === today.getMonth() && viewYear === today.getFullYear();
-
-            days.push(
-                <View key={d} style={styles.calendarDayContainer}>
-                    <View style={[
-                        styles.calendarDay,
-                        isDark && styles.calendarDayDark,
-                        isToday && styles.dayToday,
-                        isToday && isDark && { borderColor: '#56C02B' }
-                    ]}>
-                        <Text style={[
-                            styles.dayText,
-                            isDark && styles.textDark,
-                            isToday && styles.dayTextToday
-                        ]}>
-                            {d}
-                        </Text>
-                        {isCompleted && <View style={styles.completionDot} />}
-                    </View>
-                </View>
-            );
-        }
-
-        return (
-            <View style={[styles.calendarCard, isDark && styles.cardDark]}>
-                <View style={styles.calendarHeader}>
-                    <TouchableOpacity onPress={handlePrevMonth} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                        <Ionicons name="chevron-back" size={20} color={isDark ? '#fff' : '#333'} />
-                    </TouchableOpacity>
-
-                    <Text style={[styles.monthTitle, isDark && styles.textDark]}>{monthName} {viewYear}</Text>
-
-                    <TouchableOpacity onPress={handleNextMonth} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                        <Ionicons name="chevron-forward" size={20} color={isDark ? '#fff' : '#333'} />
-                    </TouchableOpacity>
-                </View>
-
-                <View style={styles.weekDays}>
-                    {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, index) => (
-                        <Text key={`${day}-${index}`} style={[styles.weekDayText, isDark && styles.weekDayTextDark]}>{day}</Text>
-                    ))}
-                </View>
-
-                <View style={styles.calendarGrid}>
-                    {days}
-                </View>
-            </View>
-        );
     };
 
     return (
@@ -292,22 +207,6 @@ export default function ProfileScreen() {
                                 <Text style={styles.quickStatLabel}>Impact Level</Text>
                             </TouchableOpacity>
                         </Animated.View>
-                    </Animated.View>
-
-                    {/* Habit Calendar Section */}
-                    <Animated.View style={{
-                        opacity: fadeAnims[2],
-                        transform: [{
-                            translateY: fadeAnims[2].interpolate({
-                                inputRange: [0, 1],
-                                outputRange: [20, 0],
-                            })
-                        }]
-                    }}>
-                        <View style={styles.sectionHeader}>
-                            <Text style={[styles.sectionTitle, isDark && styles.textDark]}>Impact Calendar</Text>
-                        </View>
-                        {renderCalendar()}
                     </Animated.View>
 
                     <View style={{ height: 32 }} />

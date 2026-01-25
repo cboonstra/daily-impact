@@ -189,7 +189,9 @@ export default function HomeScreen() {
     <View style={[styles.container, isDark && styles.containerDark]}>
       {/* Header */}
       <View style={[styles.header, isDark && styles.headerDark]}>
+        <View style={{ width: 32 }} />
         <Text style={[styles.headerTitle, isDark && styles.headerTitleDark]}>SDGs</Text>
+        <View style={{ width: 32 }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -332,6 +334,7 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 15,
     paddingHorizontal: 20,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     borderBottomWidth: 1,
@@ -350,7 +353,7 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   scrollContent: {
-    padding: 16,
+    padding: 20,
     paddingBottom: 140,
     flexGrow: 1,
   },
