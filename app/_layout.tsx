@@ -5,6 +5,8 @@ import 'react-native-reanimated';
 
 import { ImpactProvider } from '@/context/ImpactContext';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { registerForPushNotificationsAsync, scheduleDailyReminder } from '@/utils/notifications';
+import { useEffect } from 'react';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -12,6 +14,16 @@ export const unstable_settings = {
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+
+  useEffect(() => {
+    async function setupNotifications() {
+      await registerForPushNotificationsAsync();
+      // Schedule a daily reminder for 9:00 AM
+      await scheduleDailyReminder(9, 0, "Daily Impact", "Your new daily action is ready! 🌱");
+    }
+
+    setupNotifications();
+  }, []);
 
   return (
     <ImpactProvider>

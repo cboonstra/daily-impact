@@ -2,6 +2,7 @@ import { LEVEL_SYSTEM } from '@/constants/levels';
 import { useImpact } from '@/context/ImpactContext';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useImpactHistory } from '@/hooks/useImpactHistory';
+import { cancelAllNotifications, scheduleDailyReminder } from '@/utils/notifications';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BlurView } from 'expo-blur';
@@ -9,7 +10,7 @@ import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import { useFocusEffect } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Animated, Dimensions, Image, Linking, Modal, Platform, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Animated, Dimensions, Image, Linking, Modal, Platform, ScrollView, Share, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 const FRIENDS = [
     { id: '1', name: 'Alex Rivers', impactCount: 42, avatar: 'https://i.pravatar.cc/150?u=alex' },
@@ -38,6 +39,22 @@ export default function ProfileScreen() {
     const [editName, setEditName] = useState(profile.name);
     const [editBio, setEditBio] = useState(profile.bio);
     const [editEmail, setEditEmail] = useState(profile.email);
+    const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+
+    const toggleNotifications = async (value: boolean) => {
+        setNotificationsEnabled(value);
+        if (value) {
+            await scheduleDailyReminder(9, 0, "Daily Impact", "Your new daily action is ready! 🌱");
+            if (Platform.OS !== 'web') {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            }
+        } else {
+            await cancelAllNotifications();
+            if (Platform.OS !== 'web') {
+                Haptics.selectionAsync();
+            }
+        }
+    };
 
     const currentLevelInfo = [...LEVEL_SYSTEM].reverse().find(l => total >= l.impacts) || LEVEL_SYSTEM[0];
 
@@ -327,6 +344,20 @@ export default function ProfileScreen() {
                                     <Text style={[styles.detailValue, isDark && styles.textDark]}>{profile.email}</Text>
                                 </View>
                             </View>
+                            <View style={[styles.detailItem, styles.friendDivider, isDark && styles.friendDividerDark]}>
+                                <Ionicons name="notifications-outline" size={20} color="#8E8E93" style={styles.detailIcon} />
+                                <View style={{ flex: 1, paddingRight: 10 }}>
+                                    <Text style={styles.detailLabel}>Daily Reminders</Text>
+                                    <Text style={[styles.detailValue, isDark && styles.textDark]}>{notificationsEnabled ? 'On' : 'Off'}</Text>
+                                </View>
+                                <Switch
+                                    value={notificationsEnabled}
+                                    onValueChange={toggleNotifications}
+                                    trackColor={{ false: '#767577', true: '#3F7E44' }}
+                                    thumbColor={'#f4f3f4'}
+                                    ios_backgroundColor="#3e3e3e"
+                                />
+                            </View>
                             <View style={styles.detailItem}>
                                 <Ionicons name="calendar-outline" size={20} color="#8E8E93" style={styles.detailIcon} />
                                 <View>
@@ -349,14 +380,15 @@ export default function ProfileScreen() {
                         </Text>
                     </View>
                 </View>
-            </ScrollView>
+            </ScrollView >
 
             {/* Level Modal */}
-            <Modal
+            < Modal
                 visible={isLevelModalVisible}
                 transparent
                 animationType="fade"
-                onRequestClose={() => setIsLevelModalVisible(false)}
+                onRequestClose={() => setIsLevelModalVisible(false)
+                }
             >
                 <TouchableOpacity
                     style={styles.modalOverlay}
@@ -414,7 +446,7 @@ export default function ProfileScreen() {
             </Modal >
 
             {/* Edit Profile Modal */}
-            <Modal
+            < Modal
                 visible={isEditModalVisible}
                 transparent
                 animationType="slide"
@@ -482,8 +514,8 @@ export default function ProfileScreen() {
                         </View>
                     </View>
                 </View>
-            </Modal>
-        </View>
+            </Modal >
+        </View >
     );
 }
 
