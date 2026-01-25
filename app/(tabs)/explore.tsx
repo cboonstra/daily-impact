@@ -5,7 +5,7 @@ import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Dimensions, Modal, PanResponder, Platform, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Animated, Dimensions, Modal, PanResponder, Platform, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -204,9 +204,14 @@ export default function HomeScreen() {
           style={styles.headerInfoButton}
           onPress={async () => {
             await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            Alert.alert(
+              "What are the SDGs?",
+              "The 17 Sustainable Development Goals were adopted by all United Nations Member States in 2015. They provide a shared blueprint for peace and prosperity for people and the planet, now and into the future.",
+              [{ text: "Got it" }]
+            );
           }}
         >
-          <Ionicons name="search-outline" size={24} color={isDark ? '#fff' : '#333'} />
+          <Ionicons name="information-circle-outline" size={24} color={isDark ? '#fff' : '#333'} />
         </TouchableOpacity>
       </BlurView>
 
