@@ -99,23 +99,85 @@ export default function HomeScreen() {
     })
   ).current;
 
-  const renderSdgTile = (sdg: typeof SDGS[0]) => (
-    <TouchableOpacity
-      key={sdg.id}
-      style={[styles.tile, { backgroundColor: sdg.color }]}
-      onPress={() => handleOpen(sdg)}
-      activeOpacity={0.8}
-    >
-      {sdg.icon ? (
-        <Image source={sdg.icon} style={styles.tileIcon} contentFit="contain" />
-      ) : (
-        <View style={styles.placeholderIcon}>
-          <Text style={styles.placeholderNumber}>{sdg.id}</Text>
-          <Text style={styles.placeholderText} numberOfLines={2}>{sdg.title}</Text>
-        </View>
-      )}
-    </TouchableOpacity>
-  );
+  // Staggered Entry Animation
+  const entryAnims = useRef(SDGS.map(() => new Animated.Value(0))).current;
+
+  useEffect(() => {
+    Animated.stagger(50,
+      entryAnims.map(anim =>
+        Animated.parallel([
+          Animated.timing(anim, {
+            toValue: 1,
+            duration: 500,
+            useNativeDriver: true,
+          }),
+        ])
+      )
+    ).start();
+  }, []);
+
+  const renderSdgTile = (sdg: typeof SDGS[0], index: number) => {
+    const scaleAnim = new Animated.Value(1);
+
+    const onPressIn = () => {
+      Animated.spring(scaleAnim, {
+        toValue: 0.95,
+        useNativeDriver: true,
+      }).start();
+    };
+
+    const onPressOut = () => {
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        friction: 4,
+        tension: 40,
+        useNativeDriver: true,
+      }).start();
+    };
+
+    return (
+      <Animated.View
+        key={sdg.id}
+        style={[
+          styles.tileContainer,
+          {
+            opacity: entryAnims[index],
+            transform: [
+              {
+                scale: Animated.multiply(entryAnims[index].interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0.9, 1],
+                }), scaleAnim)
+              },
+              {
+                translateY: entryAnims[index].interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [20, 0],
+                })
+              }
+            ]
+          }
+        ]}
+      >
+        <TouchableOpacity
+          style={[styles.tile, { backgroundColor: sdg.color }]}
+          onPress={() => handleOpen(sdg)}
+          onPressIn={onPressIn}
+          onPressOut={onPressOut}
+          activeOpacity={0.9}
+        >
+          {sdg.icon ? (
+            <Image source={sdg.icon} style={styles.tileIcon} contentFit="contain" />
+          ) : (
+            <View style={styles.placeholderIcon}>
+              <Text style={styles.placeholderNumber}>{sdg.id}</Text>
+              <Text style={styles.placeholderText} numberOfLines={2}>{sdg.title}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+      </Animated.View>
+    );
+  };
 
   return (
     <View style={styles.container}>
