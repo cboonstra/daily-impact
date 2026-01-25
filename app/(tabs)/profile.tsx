@@ -152,7 +152,7 @@ export default function ProfileScreen() {
                 ]}
                 showsVerticalScrollIndicator={false}
             >
-                <View style={{ flex: 1 }}>
+                <View style={styles.profileContent}>
                     {/* Profile Brief */}
                     <Animated.View style={[
                         styles.profileBriefCard,
@@ -219,8 +219,6 @@ export default function ProfileScreen() {
                             </TouchableOpacity>
                         </Animated.View>
                     </Animated.View>
-
-                    <View style={{ height: 32 }} />
 
                     {/* Friends Section */}
                     <Animated.View style={{
@@ -310,14 +308,14 @@ export default function ProfileScreen() {
                     <TouchableOpacity style={styles.logoutButton}>
                         <Text style={styles.logoutText}>Log Out</Text>
                     </TouchableOpacity>
-                </View>
 
-                {/* Footer Tag */}
-                <View style={[styles.infoBox, isDark && styles.infoBoxDark]}>
-                    <Ionicons name="sparkles-outline" size={20} color="#FFB300" />
-                    <Text style={[styles.infoText, isDark && styles.infoTextDark]}>
-                        Consistent actions create the biggest impact. Keep it up!
-                    </Text>
+                    {/* Footer Tag */}
+                    <View style={[styles.infoBox, isDark && styles.infoBoxDark]}>
+                        <Ionicons name="sparkles-outline" size={20} color="#FFB300" />
+                        <Text style={[styles.infoText, isDark && styles.infoTextDark]}>
+                            Consistent actions create the biggest impact. Keep it up!
+                        </Text>
+                    </View>
                 </View>
             </ScrollView>
 
@@ -381,7 +379,7 @@ export default function ProfileScreen() {
                         </TouchableOpacity>
                     </View>
                 </TouchableOpacity>
-            </Modal>
+            </Modal >
 
             {/* Edit Profile Modal */}
             <Modal
@@ -509,7 +507,9 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.05,
         shadowRadius: 10,
         elevation: 2,
-        marginBottom: 32,
+    },
+    profileContent: {
+        gap: 20,
     },
     avatarContainer: {
         position: 'relative',
@@ -595,6 +595,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: 16,
+        marginTop: 36,
     },
     sectionTitle: {
         fontSize: 18,
@@ -615,7 +616,6 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.05,
         shadowRadius: 10,
         elevation: 2,
-        marginBottom: 32,
     },
     cardDark: {
         backgroundColor: '#1C1C1E',
@@ -703,7 +703,6 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.05,
         shadowRadius: 10,
         elevation: 2,
-        marginBottom: 32,
     },
     detailItem: {
         flexDirection: 'row',

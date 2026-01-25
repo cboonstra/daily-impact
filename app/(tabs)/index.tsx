@@ -1,4 +1,5 @@
 import { LEVEL_SYSTEM } from '@/constants/levels';
+import { MEDALS } from '@/constants/medals';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useDailyImpact } from '@/hooks/useDailyImpact';
 import { useImpactHistory } from '@/hooks/useImpactHistory';
@@ -18,7 +19,7 @@ const AnimatedGradient = Animated.createAnimatedComponent(LinearGradient);
 export default function DailyHabitScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
-  const { action, isDone, shufflesRemaining, isLoading, shuffle, markDone, unmarkDone } = useDailyImpact();
+  const { action, isDone, shufflesRemaining, isLoading, shuffle, markDone, unmarkDone, completedSdgIds } = useDailyImpact();
   const { history, getStats, refreshHistory } = useImpactHistory();
   const { total, streak } = getStats();
   const cardRef = useRef<View>(null);
@@ -613,6 +614,7 @@ export default function DailyHabitScreen() {
             </View>
           </View>
 
+
           {/* Level Progress */}
           <View style={[styles.levelCard, isDark && styles.cardDark]}>
             <View style={styles.levelCardContent}>
@@ -668,6 +670,46 @@ export default function DailyHabitScreen() {
                 <Text style={[styles.detailValue, isDark && styles.textDark]}>{nextLevelInfo?.impacts || 'Max'}</Text>
               </View>
             </View>
+          </View>
+
+          {/* Medals / Achievements */}
+          <View style={styles.medalsSection}>
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.sectionTitle, isDark && styles.textDark]}>Achievements</Text>
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.medalsScroll}
+            >
+              {MEDALS.map((medal) => {
+                let isEarned = false;
+                if (medal.type === 'total') isEarned = total >= medal.requirement;
+                if (medal.type === 'streak') isEarned = streak >= medal.requirement;
+                if (medal.type === 'sdgs') isEarned = completedSdgIds.length >= medal.requirement;
+
+                return (
+                  <View key={medal.id} style={[styles.medalCard, isDark && styles.cardDark]}>
+                    <View style={[
+                      styles.medalIconContainer,
+                      { backgroundColor: isEarned ? medal.color + '20' : isDark ? '#2C2C2E' : '#F2F2F7' }
+                    ]}>
+                      <Ionicons
+                        name={isEarned ? (medal.icon as any) : 'lock-closed'}
+                        size={28}
+                        color={isEarned ? medal.color : isDark ? '#444' : '#C7C7CC'}
+                      />
+                    </View>
+                    <Text style={[styles.medalTitleText, isDark && styles.textDark]} numberOfLines={1}>
+                      {medal.title}
+                    </Text>
+                    <Text style={styles.medalStatusText}>
+                      {isEarned ? 'Unlocked' : 'Locked'}
+                    </Text>
+                  </View>
+                );
+              })}
+            </ScrollView>
           </View>
 
           {/* Impact Calendar */}
@@ -914,7 +956,8 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   dashboardInfo: {
-    gap: 16,
+    gap: 20,
+    marginTop: 28,
   },
   weeklyContainer: {
     backgroundColor: '#fff',
@@ -1078,12 +1121,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#F2F2F7',
   },
   sectionHeader: {
-    marginBottom: 12,
-    marginTop: 32,
+    marginBottom: 16,
+    marginTop: 36,
   },
   sectionHeaderFirst: {
-    marginTop: 0,
     marginBottom: 16,
+    marginTop: 0,
   },
   sectionTitle: {
     fontSize: 18,
@@ -1184,7 +1227,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 10,
     elevation: 2,
-    marginBottom: 20,
   },
   cardDark: {
     backgroundColor: '#1E1E1E',
@@ -1425,5 +1467,44 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '700',
+  },
+  medalsSection: {
+  },
+  medalsScroll: {
+    paddingRight: 20,
+    paddingBottom: 4,
+    gap: 12,
+  },
+  medalCard: {
+    width: 120,
+    backgroundColor: '#fff',
+    borderRadius: 24,
+    padding: 16,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  medalIconContainer: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  medalTitleText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#333',
+    textAlign: 'center',
+    marginBottom: 2,
+  },
+  medalStatusText: {
+    fontSize: 11,
+    color: '#8E8E93',
+    fontWeight: '600',
   },
 });

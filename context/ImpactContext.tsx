@@ -5,6 +5,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 const STORAGE_KEY = 'daily_impact_state';
 const HISTORY_KEY = 'daily_impact_history';
 const PROFILE_KEY = 'daily_impact_profile';
+const COMPLETED_SDGS_KEY = 'completed_sdg_ids';
 
 interface DailyState {
     date: string;
@@ -26,6 +27,7 @@ interface ImpactContextType {
     isLoading: boolean;
     history: { [key: string]: boolean };
     profile: ProfileData;
+    completedSdgIds: number[];
     shuffle: () => Promise<void>;
     markDone: () => Promise<void>;
     unmarkDone: () => Promise<void>;
@@ -49,6 +51,7 @@ export function ImpactProvider({ children }: { children: React.ReactNode }) {
     const [isLoading, setIsLoading] = useState(true);
     const [history, setHistory] = useState<{ [key: string]: boolean }>({});
     const [profile, setProfile] = useState<ProfileData>(DEFAULT_PROFILE);
+    const [completedSdgIds, setCompletedSdgIds] = useState<number[]>([]);
 
     const getTodayString = () => {
         return new Date().toISOString().split('T')[0];
@@ -83,6 +86,12 @@ export function ImpactProvider({ children }: { children: React.ReactNode }) {
             const storedProfile = await AsyncStorage.getItem(PROFILE_KEY);
             if (storedProfile) {
                 setProfile(JSON.parse(storedProfile));
+            }
+
+            // Load Completed SDGs
+            const storedSdgs = await AsyncStorage.getItem(COMPLETED_SDGS_KEY);
+            if (storedSdgs) {
+                setCompletedSdgIds(JSON.parse(storedSdgs));
             }
         } catch (e) {
             console.error('Failed to load impact data', e);
@@ -146,6 +155,13 @@ export function ImpactProvider({ children }: { children: React.ReactNode }) {
         await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
         setIsDone(true);
         await updateHistory(today, true);
+
+        // Track completed SDGs
+        if (!completedSdgIds.includes(action.sdgId)) {
+            const newSdgs = [...completedSdgIds, action.sdgId];
+            setCompletedSdgIds(newSdgs);
+            await AsyncStorage.setItem(COMPLETED_SDGS_KEY, JSON.stringify(newSdgs));
+        }
     };
 
     const unmarkDone = async () => {
@@ -197,7 +213,7 @@ export function ImpactProvider({ children }: { children: React.ReactNode }) {
 
     return (
         <ImpactContext.Provider value={{
-            action, shufflesRemaining, isDone, isLoading, history, profile,
+            action, shufflesRemaining, isDone, isLoading, history, profile, completedSdgIds,
             shuffle, markDone, unmarkDone, refreshHistory: loadData, getStats, updateProfile
         }}>
             {children}

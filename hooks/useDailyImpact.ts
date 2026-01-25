@@ -8,7 +8,8 @@ export function useDailyImpact() {
         isLoading,
         shuffle,
         markDone,
-        unmarkDone
+        unmarkDone,
+        completedSdgIds
     } = useImpact();
 
     return {
@@ -19,5 +20,6 @@ export function useDailyImpact() {
         shuffle,
         markDone,
         unmarkDone,
+        completedSdgIds,
     };
 }
