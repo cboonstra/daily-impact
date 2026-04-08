@@ -52,6 +52,7 @@
       "typedRoutes": true,
       "reactCompiler": true
     },
+    "privacy": "https://cboonstra.github.io/daily-impact/privacy-policy.html",
     "extra": {
       "router": {},
       "eas": {

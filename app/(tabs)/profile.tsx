@@ -8,7 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Animated, Dimensions, Image, Linking, Modal, Platform, ScrollView, Share, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
@@ -96,6 +96,7 @@ const FriendRow = ({ friend, isDark, isLast, onPress }: { friend: Friend, isDark
 export default function ProfileScreen() {
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
+    const router = useRouter();
     const { history, refreshHistory, getStats } = useImpactHistory();
     const { profile, updateProfile } = useImpact();
     const { total, streak } = getStats();
@@ -483,13 +484,24 @@ export default function ProfileScreen() {
                                     ios_backgroundColor="#3e3e3e"
                                 />
                             </View>
-                            <View style={styles.detailItem}>
+                            <View style={[styles.detailItem, styles.friendDivider, isDark && styles.friendDividerDark]}>
                                 <Ionicons name="calendar-outline" size={20} color="#8E8E93" style={styles.detailIcon} />
                                 <View>
                                     <Text style={styles.detailLabel}>Joined</Text>
                                     <Text style={[styles.detailValue, isDark && styles.textDark]}>January 24, 2026</Text>
                                 </View>
                             </View>
+                            <TouchableOpacity
+                                style={styles.detailItem}
+                                onPress={() => router.push('/privacy-policy')}
+                                activeOpacity={0.7}
+                            >
+                                <Ionicons name="shield-checkmark-outline" size={20} color="#8E8E93" style={styles.detailIcon} />
+                                <View style={{ flex: 1 }}>
+                                    <Text style={styles.detailLabel}>Privacy Policy</Text>
+                                </View>
+                                <Ionicons name="chevron-forward" size={16} color={isDark ? '#636366' : '#C7C7CC'} />
+                            </TouchableOpacity>
                         </View>
                     </Animated.View>
 
