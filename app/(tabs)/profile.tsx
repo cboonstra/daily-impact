@@ -12,22 +12,21 @@ import { useFocusEffect } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Animated, Dimensions, Image, Linking, Modal, Platform, ScrollView, Share, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
-const FRIENDS = [
-    { id: '1', name: 'Alex Rivers', impactCount: 42, avatar: 'https://i.pravatar.cc/150?u=alex' },
-    { id: '2', name: 'Sarah Chen', impactCount: 128, avatar: 'https://i.pravatar.cc/150?u=sarah' },
-    { id: '3', name: 'Marcus de Vries', impactCount: 15, avatar: 'https://i.pravatar.cc/150?u=marcus' },
-    { id: '4', name: 'Elena Petrova', impactCount: 89, avatar: 'https://i.pravatar.cc/150?u=elena' },
+type Friend = {
+    id: string;
+    name: string;
+    impactCount: number;
+    avatar: string | null;
+};
+
+const FRIENDS: Friend[] = [
+    { id: '1', name: 'Alex Rivers', impactCount: 42, avatar: null },
+    { id: '2', name: 'Sarah Chen', impactCount: 128, avatar: null },
+    { id: '3', name: 'Marcus de Vries', impactCount: 15, avatar: null },
+    { id: '4', name: 'Elena Petrova', impactCount: 89, avatar: null },
 ];
 
 const CREATOR_INITIATIVES = [
-    {
-        id: 'cookbook',
-        title: 'The Vegan Starter Kit',
-        description: 'Lifestyle guide, recipes & impact of plant-based living.',
-        icon: 'book-outline', // Ionicons name
-        emoji: '📖',
-        url: 'https://example.com/vegan-starter-kit'
-    },
     {
         id: 'website',
         title: 'Lentil & Lime',
@@ -36,23 +35,14 @@ const CREATOR_INITIATIVES = [
         emoji: '🍋',
         url: 'https://lentil-lime.com'
     },
-    {
-        id: 'planting',
-        title: 'Plant It Forward',
-        description: 'Spreading awareness on plant-based eating through education.',
-        icon: 'leaf-outline',
-        emoji: '🌱',
-        url: 'https://example.com/plant-it-forward'
-    }
 ];
 
 const PROFILE_IMAGE_KEY = 'user_profile_image';
-const DEFAULT_AVATAR = 'https://i.pravatar.cc/150?u=lotte';
 
 // LEVEL_SYSTEM moved to constants/levels.ts
 
 
-const FriendRow = ({ friend, isDark, isLast, onPress }: { friend: typeof FRIENDS[0], isDark: boolean, isLast: boolean, onPress: () => void }) => {
+const FriendRow = ({ friend, isDark, isLast, onPress }: { friend: Friend, isDark: boolean, isLast: boolean, onPress: () => void }) => {
     const scaleAnim = useRef(new Animated.Value(1)).current;
 
     const handleWave = async () => {
@@ -74,7 +64,15 @@ const FriendRow = ({ friend, isDark, isLast, onPress }: { friend: typeof FRIENDS
                 onPress={onPress}
                 activeOpacity={0.7}
             >
-                <Image source={{ uri: friend.avatar }} style={styles.friendAvatar} />
+                {friend.avatar ? (
+                    <Image source={{ uri: friend.avatar }} style={styles.friendAvatar} />
+                ) : (
+                    <View style={[styles.friendAvatar, styles.avatarInitialsContainer]}>
+                        <Text style={styles.avatarInitialsText}>
+                            {friend.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                        </Text>
+                    </View>
+                )}
                 <View style={styles.friendInfo}>
                     <Text style={[styles.friendName, isDark && styles.textDark]}>{friend.name}</Text>
                     <Text style={[styles.friendSubtext, isDark && styles.profileBioDark]}>
@@ -101,10 +99,10 @@ export default function ProfileScreen() {
     const { history, refreshHistory, getStats } = useImpactHistory();
     const { profile, updateProfile } = useImpact();
     const { total, streak } = getStats();
-    const [profileImage, setProfileImage] = useState(DEFAULT_AVATAR);
+    const [profileImage, setProfileImage] = useState<string | null>(null);
     const [isLevelModalVisible, setIsLevelModalVisible] = useState(false);
     const [isEditModalVisible, setIsEditModalVisible] = useState(false);
-    const [selectedFriend, setSelectedFriend] = useState<typeof FRIENDS[0] | null>(null);
+    const [selectedFriend, setSelectedFriend] = useState<Friend | null>(null);
     const [viewDate, setViewDate] = useState(new Date());
 
     // Form state
@@ -273,10 +271,17 @@ export default function ProfileScreen() {
                             style={styles.avatarContainer}
                         >
                             <Animated.View style={{ transform: [{ scale: avatarScale }] }}>
-                                <Image
-                                    source={{ uri: profileImage }}
-                                    style={styles.avatar}
-                                />
+                                {profileImage ? (
+                                    <Image source={{ uri: profileImage }} style={styles.avatar} />
+                                ) : (
+                                    <View style={[styles.avatar, styles.avatarInitialsContainer, isDark && styles.avatarInitialsContainerDark]}>
+                                        <Text style={[styles.avatarInitialsText, styles.avatarInitialsTextLarge]}>
+                                            {profile.name
+                                                ? profile.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+                                                : '?'}
+                                        </Text>
+                                    </View>
+                                )}
                                 <View style={[styles.editAvatarBadge, isDark && styles.editAvatarBadgeDark]}>
                                     <Ionicons name="camera" size={16} color="#fff" />
                                 </View>
@@ -741,7 +746,15 @@ export default function ProfileScreen() {
                         {selectedFriend && (
                             <>
                                 <View style={styles.modalHeader}>
-                                    <Image source={{ uri: selectedFriend.avatar }} style={styles.avatar} />
+                                    {selectedFriend.avatar ? (
+                                        <Image source={{ uri: selectedFriend.avatar }} style={styles.avatar} />
+                                    ) : (
+                                        <View style={[styles.avatar, styles.avatarInitialsContainer]}>
+                                            <Text style={[styles.avatarInitialsText, styles.avatarInitialsTextLarge]}>
+                                                {selectedFriend.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                                            </Text>
+                                        </View>
+                                    )}
                                 </View>
 
                                 <Text style={[styles.profileName, isDark && styles.textDark, { marginBottom: 8 }]}>
@@ -1000,6 +1013,22 @@ const styles = StyleSheet.create({
         height: 48,
         borderRadius: 24,
         marginRight: 12,
+    },
+    avatarInitialsContainer: {
+        backgroundColor: '#3F7E44',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    avatarInitialsContainerDark: {
+        backgroundColor: '#2A5C2E',
+    },
+    avatarInitialsText: {
+        color: '#fff',
+        fontWeight: '700',
+        fontSize: 16,
+    },
+    avatarInitialsTextLarge: {
+        fontSize: 32,
     },
     friendInfo: {
         flex: 1,

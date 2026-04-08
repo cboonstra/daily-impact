@@ -39,9 +39,9 @@ interface ImpactContextType {
 const ImpactContext = createContext<ImpactContextType | undefined>(undefined);
 
 const DEFAULT_PROFILE = {
-    name: 'Lotte Boonstra',
-    bio: 'Making everyday impact counts. 🌍✨',
-    email: 'lotte@dailyimpact.com',
+    name: '',
+    bio: '',
+    email: '',
 };
 
 export function ImpactProvider({ children }: { children: React.ReactNode }) {

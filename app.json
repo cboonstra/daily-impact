@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "daily-impact",
+    "name": "Daily Impact",
     "slug": "daily-impact",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -9,9 +9,17 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": false,
+      "bundleIdentifier": "com.lotteboonstra.dailyimpact",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "Daily Impact needs access to your photo library to set a custom profile picture.",
+        "NSCameraUsageDescription": "Daily Impact needs camera access to take a new profile photo."
+      }
     },
     "android": {
+      "package": "com.lotteboonstra.dailyimpact",
+      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
