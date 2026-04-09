@@ -73,7 +73,7 @@ export default function PrivacyPolicyScreen() {
 
                 <Section title="Contact" isDark={isDark}>
                     Questions about this policy? Reach out at:{'\n\n'}
-                    <Text style={[styles.bold, styles.email]}>hello@dailyimpact.app</Text>
+                    <Text style={[styles.bold, styles.email]}>hello@lentil-lime.com</Text>
                 </Section>
 
                 <View style={styles.footer}>
