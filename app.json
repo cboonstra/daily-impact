@@ -10,7 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.lotteboonstra.dailyimpact",
+      "bundleIdentifier": "nl.asrr.dailyimpact",
       "buildNumber": "1",
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "Daily Impact needs access to your photo library to set a custom profile picture.",
@@ -18,7 +18,7 @@
       }
     },
     "android": {
-      "package": "com.lotteboonstra.dailyimpact",
+      "package": "nl.asrr.dailyimpact",
       "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
