@@ -1,4 +1,6 @@
 import { SDG_ACTIONS, SdgAction } from '@/constants/sdgActions';
+import { api } from '@/services/api';
+import { ProgressResponse, UserResponse } from '@/types/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
@@ -82,10 +84,29 @@ export function ImpactProvider({ children }: { children: React.ReactNode }) {
                 setHistory(JSON.parse(storedHistory));
             }
 
-            // Load Profile
-            const storedProfile = await AsyncStorage.getItem(PROFILE_KEY);
-            if (storedProfile) {
-                setProfile(JSON.parse(storedProfile));
+            // Load Profile — try backend first, fall back to local
+            try {
+                const serverUser = await api.get<UserResponse>('/api/users/me');
+                const serverProfile = { name: serverUser.name, bio: serverUser.bio ?? '', email: serverUser.email };
+                setProfile(serverProfile);
+                await AsyncStorage.setItem(PROFILE_KEY, JSON.stringify(serverProfile));
+            } catch {
+                const storedProfile = await AsyncStorage.getItem(PROFILE_KEY);
+                if (storedProfile) setProfile(JSON.parse(storedProfile));
+            }
+
+            // Sync progress from backend
+            try {
+                const serverProgress = await api.get<ProgressResponse>('/api/progress/me');
+                const localHistory = JSON.parse(await AsyncStorage.getItem(HISTORY_KEY) ?? '{}');
+                if (serverProgress.total >= Object.keys(localHistory).length) {
+                    setHistory(serverProgress.history);
+                    setCompletedSdgIds(serverProgress.completedSdgIds);
+                    await AsyncStorage.setItem(HISTORY_KEY, JSON.stringify(serverProgress.history));
+                    await AsyncStorage.setItem(COMPLETED_SDGS_KEY, JSON.stringify(serverProgress.completedSdgIds));
+                }
+            } catch {
+                // use local history loaded below
             }
 
             // Load Completed SDGs
@@ -162,6 +183,9 @@ export function ImpactProvider({ children }: { children: React.ReactNode }) {
             setCompletedSdgIds(newSdgs);
             await AsyncStorage.setItem(COMPLETED_SDGS_KEY, JSON.stringify(newSdgs));
         }
+
+        // Sync to backend (fire and forget)
+        api.post('/api/progress/me/complete', { sdgId: action.sdgId, date: today }).catch(() => {});
     };
 
     const unmarkDone = async () => {
@@ -182,6 +206,8 @@ export function ImpactProvider({ children }: { children: React.ReactNode }) {
         const newProfile = { ...profile, ...data };
         await AsyncStorage.setItem(PROFILE_KEY, JSON.stringify(newProfile));
         setProfile(newProfile);
+        // Sync to backend (fire and forget)
+        api.put('/api/users/me', { name: newProfile.name, bio: newProfile.bio }).catch(() => {});
     };
 
     const getStats = () => {

@@ -1,7 +1,10 @@
 import { LEVEL_SYSTEM } from '@/constants/levels';
+import { useAuth } from '@/context/AuthContext';
 import { useImpact } from '@/context/ImpactContext';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useImpactHistory } from '@/hooks/useImpactHistory';
+import { api, ApiError } from '@/services/api';
+import { FriendRequestResponse, FriendResponse } from '@/types/api';
 import { cancelAllNotifications, scheduleDailyReminder } from '@/utils/notifications';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -10,21 +13,15 @@ import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Animated, Dimensions, Image, Linking, Modal, Platform, ScrollView, Share, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Animated, Dimensions, Image, Linking, Modal, Platform, ScrollView, Share, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 type Friend = {
     id: string;
     name: string;
     impactCount: number;
     avatar: string | null;
+    streak?: number;
 };
-
-const FRIENDS: Friend[] = [
-    { id: '1', name: 'Alex Rivers', impactCount: 42, avatar: null },
-    { id: '2', name: 'Sarah Chen', impactCount: 128, avatar: null },
-    { id: '3', name: 'Marcus de Vries', impactCount: 15, avatar: null },
-    { id: '4', name: 'Elena Petrova', impactCount: 89, avatar: null },
-];
 
 const CREATOR_INITIATIVES = [
     {
@@ -97,6 +94,7 @@ export default function ProfileScreen() {
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
     const router = useRouter();
+    const { logout } = useAuth();
     const { history, refreshHistory, getStats } = useImpactHistory();
     const { profile, updateProfile } = useImpact();
     const { total, streak } = getStats();
@@ -112,6 +110,14 @@ export default function ProfileScreen() {
     const [editEmail, setEditEmail] = useState(profile.email);
     const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
+    // Friends
+    const [friends, setFriends] = useState<Friend[]>([]);
+    const [friendRequests, setFriendRequests] = useState<FriendRequestResponse[]>([]);
+    const [isAddFriendModalVisible, setIsAddFriendModalVisible] = useState(false);
+    const [addFriendEmail, setAddFriendEmail] = useState('');
+    const [addFriendError, setAddFriendError] = useState('');
+    const [addFriendLoading, setAddFriendLoading] = useState(false);
+
     const toggleNotifications = async (value: boolean) => {
         setNotificationsEnabled(value);
         if (value) {
@@ -125,6 +131,63 @@ export default function ProfileScreen() {
                 Haptics.selectionAsync();
             }
         }
+    };
+
+    const loadFriends = async () => {
+        try {
+            const data = await api.get<FriendResponse[]>('/api/friends');
+            setFriends(data.map(f => ({ id: f.id, name: f.name, impactCount: f.impactTotal, avatar: f.avatarUrl, streak: f.streak })));
+        } catch { /* silently fail */ }
+    };
+
+    const loadFriendRequests = async () => {
+        try {
+            const data = await api.get<FriendRequestResponse[]>('/api/friends/requests');
+            setFriendRequests(data);
+        } catch { /* silently fail */ }
+    };
+
+    const handleSendFriendRequest = async () => {
+        if (!addFriendEmail.trim()) return;
+        setAddFriendError('');
+        setAddFriendLoading(true);
+        try {
+            await api.post('/api/friends/requests', { email: addFriendEmail.trim().toLowerCase() });
+            setIsAddFriendModalVisible(false);
+            setAddFriendEmail('');
+            Alert.alert('Request Sent!', 'Your friend request has been sent.');
+        } catch (e) {
+            if (e instanceof ApiError && e.status === 404) {
+                setAddFriendError('No user found with that email.');
+            } else if (e instanceof ApiError && e.status === 409) {
+                setAddFriendError('Already friends or request already pending.');
+            } else {
+                setAddFriendError('Something went wrong. Try again.');
+            }
+        } finally {
+            setAddFriendLoading(false);
+        }
+    };
+
+    const handleAcceptRequest = async (id: string) => {
+        try {
+            await api.put(`/api/friends/requests/${id}/accept`);
+            await Promise.all([loadFriendRequests(), loadFriends()]);
+        } catch { Alert.alert('Error', 'Could not accept request.'); }
+    };
+
+    const handleDeclineRequest = async (id: string) => {
+        try {
+            await api.put(`/api/friends/requests/${id}/decline`);
+            await loadFriendRequests();
+        } catch { Alert.alert('Error', 'Could not decline request.'); }
+    };
+
+    const handleLogout = async () => {
+        Alert.alert('Log Out', 'Are you sure you want to log out?', [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Log Out', style: 'destructive', onPress: logout },
+        ]);
     };
 
     const currentLevelInfo = [...LEVEL_SYSTEM].reverse().find(l => total >= l.impacts) || LEVEL_SYSTEM[0];
@@ -152,6 +215,8 @@ export default function ProfileScreen() {
     useFocusEffect(
         useCallback(() => {
             refreshHistory();
+            loadFriends();
+            loadFriendRequests();
 
             // Trigger staggered entry
             Animated.stagger(100,
@@ -348,20 +413,60 @@ export default function ProfileScreen() {
                         }]
                     }}>
                         <View style={styles.sectionHeader}>
-                            <Text style={[styles.sectionTitle, isDark && styles.textDark]}>Friends</Text>
-                            <TouchableOpacity onPress={handleInviteFriend}>
+                            <Text style={[styles.sectionTitle, isDark && styles.textDark]}>
+                                Friends{friendRequests.length > 0 ? ` · ${friendRequests.length} pending` : ''}
+                            </Text>
+                            <TouchableOpacity onPress={() => setIsAddFriendModalVisible(true)}>
                                 <Text style={styles.seeAllText}>Add Friend</Text>
                             </TouchableOpacity>
                         </View>
 
+                        {/* Incoming friend requests */}
+                        {friendRequests.length > 0 && (
+                            <View style={[styles.friendsCard, isDark && styles.cardDark, { marginBottom: 12 }]}>
+                                {friendRequests.map((req, index) => (
+                                    <View
+                                        key={req.id}
+                                        style={[
+                                            styles.friendItem,
+                                            index !== friendRequests.length - 1 && styles.friendDivider,
+                                            index !== friendRequests.length - 1 && isDark && styles.friendDividerDark,
+                                        ]}
+                                    >
+                                        <View style={[styles.avatarInitialsContainer, { width: 48, height: 48, borderRadius: 24, marginRight: 12 }]}>
+                                            <Text style={styles.avatarInitialsText}>
+                                                {req.fromUser.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                                            </Text>
+                                        </View>
+                                        <View style={{ flex: 1 }}>
+                                            <Text style={[styles.friendName, isDark && styles.textDark]}>{req.fromUser.name}</Text>
+                                            <Text style={[styles.friendSubtext, isDark && styles.profileBioDark]}>wants to be friends</Text>
+                                        </View>
+                                        <TouchableOpacity
+                                            style={[styles.requestButton, { backgroundColor: '#3F7E44' }]}
+                                            onPress={() => handleAcceptRequest(req.id)}
+                                        >
+                                            <Text style={styles.requestButtonText}>Accept</Text>
+                                        </TouchableOpacity>
+                                        <TouchableOpacity
+                                            style={[styles.requestButton, { backgroundColor: isDark ? '#3A3A3C' : '#E5E5EA', marginLeft: 6 }]}
+                                            onPress={() => handleDeclineRequest(req.id)}
+                                        >
+                                            <Text style={[styles.requestButtonText, { color: isDark ? '#fff' : '#333' }]}>Decline</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                ))}
+                            </View>
+                        )}
+
                         <View style={[styles.friendsCard, isDark && styles.cardDark]}>
-                            {FRIENDS.length > 0 ? (
-                                FRIENDS.map((friend, index) => (
+                            {friends.length > 0 ? (
+                                friends.map((friend, index) => (
                                     <FriendRow
                                         key={friend.id}
                                         friend={friend}
                                         isDark={isDark}
-                                        isLast={index === FRIENDS.length - 1}
+                                        isLast={index === friends.length - 1}
                                         onPress={() => setSelectedFriend(friend)}
                                     />
                                 ))
@@ -371,7 +476,7 @@ export default function ProfileScreen() {
                                         <Ionicons name="people-outline" size={32} color={isDark ? '#3A3A3C' : '#E5E5EA'} />
                                     </View>
                                     <Text style={[styles.emptyStateTitle, isDark && styles.textDark]}>No friends yet</Text>
-                                    <Text style={styles.emptyStateSub}>Impact is better together. Invite friends to start your journey!</Text>
+                                    <Text style={styles.emptyStateSub}>Impact is better together. Add friends to start your journey!</Text>
                                 </View>
                             )}
                         </View>
@@ -423,7 +528,7 @@ export default function ProfileScreen() {
                         marginTop: 10 // Extra spacing
                     }}>
                         <View style={styles.sectionHeader}>
-                            <Text style={[styles.sectionTitle, isDark && styles.textDark]}>More from Charlotte</Text>
+                            <Text style={[styles.sectionTitle, isDark && styles.textDark]}>More from Lotte</Text>
                         </View>
                         <View style={[styles.initiativesCard, isDark && styles.initiativesCardDark]}>
                             {CREATOR_INITIATIVES.map((item, index) => (
@@ -505,7 +610,7 @@ export default function ProfileScreen() {
                         </View>
                     </Animated.View>
 
-                    <TouchableOpacity style={styles.logoutButton}>
+                    <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
                         <Text style={styles.logoutText}>Log Out</Text>
                     </TouchableOpacity>
 
@@ -741,6 +846,56 @@ export default function ProfileScreen() {
                 </View>
             </Modal >
 
+
+            {/* Add Friend Modal */}
+            <Modal
+                visible={isAddFriendModalVisible}
+                transparent
+                animationType="slide"
+                onRequestClose={() => setIsAddFriendModalVisible(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={[styles.modalContent, isDark && styles.modalContentDark]}>
+                        <View style={styles.modalHeader}>
+                            <Text style={[styles.modalTitle, isDark && styles.textDark]}>Add Friend</Text>
+                            <Text style={styles.modalSubtitle}>Enter their email address</Text>
+                        </View>
+                        <View style={styles.inputGroup}>
+                            <TextInput
+                                style={[styles.input, isDark && styles.inputDark]}
+                                value={addFriendEmail}
+                                onChangeText={setAddFriendEmail}
+                                placeholder="friend@example.com"
+                                placeholderTextColor={isDark ? '#666' : '#8E8E93'}
+                                keyboardType="email-address"
+                                autoCapitalize="none"
+                                autoCorrect={false}
+                            />
+                        </View>
+                        {addFriendError ? (
+                            <Text style={{ color: '#FF3B30', fontSize: 13, marginBottom: 12, textAlign: 'center' }}>{addFriendError}</Text>
+                        ) : null}
+                        <View style={[styles.modalFooter, isDark && styles.modalFooterDark]}>
+                            <TouchableOpacity
+                                style={[styles.modalButton, styles.cancelButton, isDark && styles.cancelButtonDark]}
+                                onPress={() => { setIsAddFriendModalVisible(false); setAddFriendEmail(''); setAddFriendError(''); }}
+                            >
+                                <Text style={[styles.cancelButtonText, isDark && styles.cancelButtonTextDark]}>Cancel</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.modalButton, styles.saveButton, addFriendLoading && { opacity: 0.6 }]}
+                                onPress={handleSendFriendRequest}
+                                disabled={addFriendLoading}
+                            >
+                                {addFriendLoading
+                                    ? <ActivityIndicator color="#fff" size="small" />
+                                    : <Text style={styles.saveButtonText}>Send Request</Text>
+                                }
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
 
             {/* Friend Profile Modal */}
             <Modal
@@ -1025,6 +1180,16 @@ const styles = StyleSheet.create({
         height: 48,
         borderRadius: 24,
         marginRight: 12,
+    },
+    requestButton: {
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 8,
+    },
+    requestButtonText: {
+        fontSize: 12,
+        fontWeight: '700',
+        color: '#fff',
     },
     avatarInitialsContainer: {
         backgroundColor: '#3F7E44',
